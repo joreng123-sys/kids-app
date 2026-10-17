@@ -174,7 +174,6 @@
       color: #D97706;
     }
 
-    /* 賽跑跑道 */
     .race-track-container {
       width: 100%;
       background: #E0F2FE;
@@ -296,7 +295,6 @@
       justify-content: center;
     }
 
-    /* 彈窗 */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -421,7 +419,7 @@
     let currentAnswer = null;
     let isProcessing = false;
 
-    // 賽跑變數
+    // 賽跑狀態變數
     let isRaceMode = false;
     let raceQuestionIndex = 0;
     let ponyPositions = [2, 2, 2, 2, 2];
@@ -566,17 +564,19 @@
       document.getElementById('rank-modal').style.display = 'none';
     }
 
-    // 題庫
+    // ==========================================
+    // 嚴謹題庫（字音完全統一，無文字歧異）
+    // ==========================================
     const chineseDB = {
       baby: [
-        { q: "「 ㄆ 」是什麼？", voice: "請找出 ㄆ 的東西", ans: "🍎", options: ["🍎", "🐶", "🚗", "🐟"] },
-        { q: "「 ㄍ 」是什麼？", voice: "請找出 ㄍ 的東西", ans: "🐶", options: ["🐶", "🍎", "🐱", "⭐"] },
-        { q: "「 ㄑ 」是什麼？", voice: "請找出 ㄑ 的東西", ans: "🚗", options: ["🚗", "🐟", "🐱", "🍉"] },
-        { q: "「 ㄇ 」是什麼？", voice: "請找出 ㄇ 的東西", ans: "🐱", options: ["🐱", "🐶", "🍌", "🚗"] },
-        { q: "「 ㄩˊ 」是什麼？", voice: "請找出 ㄩˊ 的東西", ans: "🐟", options: ["🐟", "🍎", "🚗", "🍉"] },
-        { q: "「 ㄒ 」是什麼？", voice: "請找出 ㄒ 的東西", ans: "🍉", options: ["🍉", "🐶", "🍎", "🐱"] },
-        { q: "「 ㄅ 」是什麼？", voice: "請找出 ㄅ 的東西", ans: "🍌", options: ["🍌", "🐱", "🐶", "🚗"] },
-        { q: "「 ㄧㄤˊ 」是什麼？", voice: "請找出 ㄧㄤˊ 的東西", ans: "🐑", options: ["🐑", "🐶", "🐟", "🍎"] }
+        { q: "「 ㄆ 」是什麼？", ans: "🍎", options: ["🍎", "🐶", "🚗", "🐟"] },
+        { q: "「 ㄍ 」是什麼？", ans: "🐶", options: ["🐶", "🍎", "🐱", "⭐"] },
+        { q: "「 ㄑ 」是什麼？", ans: "🚗", options: ["🚗", "🐟", "🐱", "🍉"] },
+        { q: "「 ㄇ 」是什麼？", ans: "🐱", options: ["🐱", "🐶", "🍌", "🚗"] },
+        { q: "「 ㄩˊ 」是什麼？", ans: "🐟", options: ["🐟", "🍎", "🚗", "🍉"] },
+        { q: "「 ㄒ 」是什麼？", ans: "🍉", options: ["🍉", "🐶", "🍎", "🐱"] },
+        { q: "「 ㄅ 」是什麼？", ans: "🍌", options: ["🍌", "🐱", "🐶", "🚗"] },
+        { q: "「 ㄧㄤˊ 」是什麼？", ans: "🐑", options: ["🐑", "🐶", "🐟", "🍎"] }
       ],
       low: [
         { q: "「河」的部首是什麼？", ans: "氵(水)", options: ["氵(水)", "木", "口", "日"] },
@@ -584,6 +584,7 @@
         { q: "一（ ）花朵", ans: "朵", options: ["朵", "頭", "張", "隻"] },
         { q: "一（ ）小狗", ans: "隻", options: ["隻", "朵", "條", "本"] },
         { q: "一（ ）汽車", ans: "輛", options: ["輛", "本", "片", "把"] },
+        { q: "一（ ）白紙", ans: "張", options: ["張", "把", "輛", "條"] },
         { q: "「白」的相反詞是？", ans: "黑", options: ["黑", "紅", "亮", "高"] },
         { q: "「木」加「木」是？", ans: "林", options: ["林", "森", "本", "休"] }
       ],
@@ -602,36 +603,47 @@
 
     const lifeDB = {
       baby: [
-        { q: "看見紅燈應該怎麼做？", voice: "紅燈要怎麼辦呢", ans: "🛑 停下來", options: ["🛑 停下來", "🏃 快跑", "🙈 閉眼", "💃 跳舞"] },
-        { q: "吃東西之前要先做什麼？", voice: "吃東西前要先洗手喔", ans: "🧼 用肥皂洗手", options: ["🧼 用肥皂洗手", "直接拿來吃", "擦在褲子上", "不用洗"] },
-        { q: "不小心撞到別人要說什麼？", voice: "撞到人要說什麼呢", ans: "對不起", options: ["對不起", "謝謝你", "沒關係", "恭喜"] }
+        { q: "看見紅燈應該怎麼做？", ans: "🛑 停下來", options: ["🛑 停下來", "🏃 快跑", "🙈 閉眼", "💃 跳舞"] },
+        { q: "吃東西之前要先做什麼？", ans: "🧼 用肥皂洗手", options: ["🧼 用肥皂洗手", "直接拿來吃", "擦在褲子上", "不用洗"] },
+        { q: "不小心撞到別人要說什麼？", ans: "對不起", options: ["對不起", "謝謝你", "沒關係", "恭喜"] },
+        { q: "別人送禮物給你時要說什麼？", ans: "謝謝你", options: ["謝謝你", "對不起", "不要", "快跑"] }
       ],
       low: [
         { q: "香蕉皮屬於哪一種垃圾？", ans: "廚餘", options: ["廚餘", "一般垃圾", "塑膠回收", "紙類回收"] },
-        { q: "搭乘機車時必須佩戴什麼？", ans: "安全帽", options: ["安全帽", "太陽眼鏡", "毛線帽", "耳機"] }
+        { q: "搭乘機車時必須佩戴什麼？", ans: "安全帽", options: ["安全帽", "太陽眼鏡", "毛線帽", "耳機"] },
+        { q: "在走廊或樓梯間應該怎麼行動？", ans: "慢慢走不奔跑", options: ["慢慢走不奔跑", "跑步追逐", "滑滑板", "閉眼睛走"] },
+        { q: "搭公車看見老爺爺或老奶奶應該？", ans: "主動禮讓座位", options: ["主動禮讓座位", "裝作沒看見", "躺在椅子上", "大聲唱歌"] }
       ],
       mid: [
-        { q: "臺灣發生火災時要撥打哪一支電話？", ans: "119", options: ["119", "110", "113", "165"] }
+        { q: "臺灣發生火災時要撥打哪一支電話？", ans: "119", options: ["119", "110", "113", "165"] },
+        { q: "遇到可疑詐騙電話要撥打哪一支電話？", ans: "165", options: ["165", "110", "119", "104"] },
+        { q: "地震避難的三步驟順序是什麼？", ans: "趴下、掩護、穩住", options: ["趴下、掩護、穩住", "搭電梯逃跑", "開窗跳樓", "收拾行李"] }
       ],
       high: [
+        { q: "臺灣社會安全網「婦幼保護專線」是？", ans: "113", options: ["113", "110", "119", "165"] },
         { q: "在消費者保護法中，網購一般享幾天猶豫期？", ans: "7天", options: ["7天", "3天", "14天", "30天"] }
       ]
     };
 
     const natureDB = {
       baby: [
-        { q: "小狗有幾隻腳？", voice: "小狗有幾隻腳呢", ans: "4 隻", options: ["4 隻", "2 隻", "6 隻", "8 隻"] },
-        { q: "白天在天空上發光的是？", voice: "白天天上發光的是誰呢", ans: "☀️ 太陽", options: ["☀️ 太陽", "🌙 月亮", "⭐ 星星", "💡 路燈"] }
+        { q: "小狗有幾隻腳？", ans: "4 隻", options: ["4 隻", "2 隻", "6 隻", "8 隻"] },
+        { q: "白天在天空上發光的是？", ans: "☀️ 太陽", options: ["☀️ 太陽", "🌙 月亮", "⭐ 星星", "💡 路燈"] },
+        { q: "小青蛙小時候叫什麼名字？", ans: "🐸 蝌蚪", options: ["🐸 蝌蚪", "🐛 毛毛蟲", "🐟 小魚", "小毛球"] },
+        { q: "大樹長在泥土裡的是哪個部位？", ans: "樹根", options: ["樹根", "葉子", "花朵", "果實"] }
       ],
       low: [
         { q: "昆蟲通常有幾隻腳？", ans: "6隻", options: ["6隻", "8隻", "4隻", "10隻"] },
-        { q: "植物製造養分主要依賴什麼作用？", ans: "光合作用", options: ["光合作用", "呼吸作用", "消化作用", "蒸發作用"] }
+        { q: "植物製造養分主要依賴什麼作用？", ans: "光合作用", options: ["光合作用", "呼吸作用", "消化作用", "蒸發作用"] },
+        { q: "水在加熱到沸騰時會變成什麼？", ans: "水蒸氣", options: ["水蒸氣", "冰塊", "乾冰", "石頭"] }
       ],
       mid: [
-        { q: "月亮每個月圓缺一次的週期約為？", ans: "約30天(一個月)", options: ["約30天(一個月)", "約7天", "約100天", "約365天"] }
+        { q: "月亮每個月圓缺一次的週期大約是？", ans: "約30天(一個月)", options: ["約30天(一個月)", "約7天", "約100天", "約365天"] },
+        { q: "空氣中含量最多的氣體是？", ans: "氮氣", options: ["氮氣", "氧氣", "二氧化碳", "氦氣"] }
       ],
       high: [
-        { q: "地球繞太陽公轉一周的時間約是？", ans: "一年(約365天)", options: ["一年(約365天)", "一天(24小時)", "一個月", "十年"] }
+        { q: "地球繞太陽公轉一周的時間大約是？", ans: "一年(約365天)", options: ["一年(約365天)", "一天(24小時)", "一個月", "十年"] },
+        { q: "人體主要的呼吸器官是什麼？", ans: "肺", options: ["肺", "心臟", "胃", "肝臟"] }
       ]
     };
 
@@ -657,6 +669,25 @@
       ]
     };
 
+    // ==========================================
+    // 零重複抽牌盒管理 (Shuffle Decks)
+    // ==========================================
+    let playDecks = {
+      chinese: {},
+      life: {},
+      nature: {},
+      english: {}
+    };
+
+    function getUnrepeatedItem(database, subName) {
+      if (!playDecks[subName][currentLevel] || playDecks[subName][currentLevel].length === 0) {
+        const source = database[currentLevel] || database['low'];
+        // 完整複製並洗牌
+        playDecks[subName][currentLevel] = [...source].sort(() => Math.random() - 0.5);
+      }
+      return playDecks[subName][currentLevel].pop();
+    }
+
     function switchLevel(level) {
       currentLevel = level;
       localStorage.setItem('kids_grade_level', level);
@@ -681,7 +712,7 @@
       nextQuestion();
     }
 
-    // 👉 關鍵優化：把括號自動唸成「什麼」
+    // 發音：嚴格對照題目國字，括號一律唸「什麼」
     function speakCurrentQuestion() {
       ensureAudioResumed();
       if (!('speechSynthesis' in window)) return;
@@ -693,9 +724,8 @@
           u.rate = 0.8;
           window.speechSynthesis.speak(u);
         } else if (currentAnswer) {
-          let txt = currentAnswer.voice || currentAnswer.q;
-          txt = txt.replace(/（\s*）|\(\s*\)/g, '什麼')
-                   .replace('\n', '，');
+          let txt = currentAnswer.q;
+          txt = txt.replace(/（\s*）|\(\s*\)/g, '什麼').replace('\n', '，');
 
           const u = new SpeechSynthesisUtterance(txt);
           u.lang = 'zh-TW';
@@ -728,7 +758,7 @@
       btn.className = isBgmPlaying ? 'action-btn playing' : 'action-btn';
     }
 
-    // 出題邏輯
+    // 出題調度
     function nextQuestion() {
       isProcessing = false;
       document.getElementById('feedback').innerText = '';
@@ -749,11 +779,11 @@
       const b = Math.floor(Math.random() * 8) + 1;
       const ans = a + b;
       document.getElementById('question').innerText = `${a} ➕ ${b} ＝ ?`;
-      currentAnswer = ans;
+      currentAnswer = { q: `${a} 加 ${b} 等於多少`, ans: ans };
 
       let options = [ans, ans + 1, ans - 1 >= 0 ? ans - 1 : ans + 2, ans + 3];
       options.sort(() => Math.random() - 0.5);
-      renderButtons(options, val => val === currentAnswer, false);
+      renderButtons(options, val => val === ans, false);
     }
 
     function generateMultiplyQuestion() {
@@ -762,40 +792,39 @@
       const b = Math.floor(Math.random() * 9) + 1;
       const ans = a * b;
       document.getElementById('question').innerText = `${a} ✖️ ${b} ＝ ?`;
-      currentAnswer = ans;
+      currentAnswer = { q: `${a} 乘以 ${b} 等於多少`, ans: ans };
 
       let options = [ans, ans + a, ans - a > 0 ? ans - a : ans + 2, ans + 1];
       options.sort(() => Math.random() - 0.5);
-      renderButtons(options, val => val === currentAnswer, false);
+      renderButtons(options, val => val === ans, false);
     }
 
     function generateGenericQuestion(database, subjectName) {
-      const list = database[currentLevel] || database['low'];
-      const qData = list[Math.floor(Math.random() * list.length)];
+      const qData = getUnrepeatedItem(database, subjectName);
       currentAnswer = qData;
       document.getElementById('question').innerText = qData.q;
       document.getElementById('audio-btn').style.display = 'inline-block';
-      setTimeout(() => speakCurrentQuestion(), 100);
+      setTimeout(() => speakCurrentQuestion(), 60);
 
       const isBabyPic = (currentLevel === 'baby' && subjectName === 'chinese');
       const options = [...qData.options].sort(() => Math.random() - 0.5);
       renderButtons(options, val => val === currentAnswer.ans, isBabyPic);
     }
 
+    // 零死鎖、流暢即時的英文出題
     function generateEnglishQuestion() {
       document.getElementById('audio-btn').style.display = 'inline-block';
       const list = englishDB[currentLevel] || englishDB['low'];
-      const targetIndex = Math.floor(Math.random() * list.length);
-      const item = list[targetIndex];
-      currentAnswer = item;
-      document.getElementById('question').innerText = item.word;
-      setTimeout(() => speakCurrentQuestion(), 100);
+      const targetItem = getUnrepeatedItem(englishDB, 'english');
+      currentAnswer = targetItem;
+      document.getElementById('question').innerText = targetItem.word;
+      setTimeout(() => speakCurrentQuestion(), 60);
 
-      const others = list.filter((_, idx) => idx !== targetIndex).sort(() => Math.random() - 0.5);
-      let options = [item.zh];
-      for (let i = 0; i < others.length && options.length < 4; i++) {
-        options.push(others[i].zh);
-      }
+      // 固定選出干擾項，保證 0 延遲
+      let wrongChoices = list.filter(it => it.word !== targetItem.word).map(it => it.zh);
+      wrongChoices.sort(() => Math.random() - 0.5);
+
+      let options = [targetItem.zh, wrongChoices[0], wrongChoices[1], wrongChoices[2]].filter(Boolean);
       options.sort(() => Math.random() - 0.5);
       renderButtons(options, val => val === currentAnswer.zh, false);
     }
@@ -829,7 +858,7 @@
         const raceOver = stepRacePonies(isCorrect);
         if (!raceOver) {
           currentSubject = ['math', 'chinese', 'life', 'nature'][Math.floor(Math.random() * 4)];
-          setTimeout(() => nextQuestion(), 800);
+          setTimeout(() => nextQuestion(), 750);
         }
         return;
       }
@@ -840,7 +869,7 @@
         score += 1;
         saveStats();
         document.getElementById('feedback').innerText = `🎉 答對了！獲得1顆堅果 🌰`;
-        setTimeout(() => nextQuestion(), 800);
+        setTimeout(() => nextQuestion(), 750);
       } else {
         btn.classList.add('wrong');
         if (score > 0) score -= 1;
