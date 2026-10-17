@@ -341,18 +341,6 @@
       font-weight: 900;
       cursor: pointer;
     }
-
-    .race-result-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(43, 27, 69, 0.78);
-      backdrop-filter: blur(4px);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 10000;
-      padding: 20px;
-    }
   </style>
 </head>
 <body onclick="ensureAudioResumed()">
@@ -446,27 +434,131 @@
       document.getElementById('session-count-tag').innerText = `本次挑戰：${sessionPlayedQuestions.size} 題不重複`;
     }
 
-    let globalQuestions = { chinese: {}, life: {}, nature: {}, english: {} };
-
     // ========================================================
-    // 🏛️ 臺灣教育部常用生字表（串接教育部萌典 API 生成萬題用）
+    // 🛡️ 完整內建保底題庫（永遠在線、絕不卡死在載入中）
     // ========================================================
-    const MOE_WORD_BANK = [
-      "林", "森", "河", "海", "草", "花", "樹", "星", "晴", "明", "貓", "狗", "魚", "鳥", 
-      "山", "水", "火", "風", "雨", "雪", "天", "地", "人", "手", "足", "目", "口", "耳", 
-      "春", "夏", "秋", "冬", "晨", "夜", "日", "月", "光", "書", "筆", "紙", "車", "船", 
-      "門", "窗", "家", "校", "友", "愛", "學", "習", "讀", "寫", "聽", "說", "跑", "跳"
-    ];
-    const COMMON_RADICALS = ["木", "氵(水)", "艹(草)", "口", "日", "目", "足", "言", "手", "火", "門", "女", "金", "土"];
+    const DEFAULT_QUESTIONS = {
+      chinese: {
+        baby: [
+          { q: "「 ㄆ 」是什麼？", ans: "🍎", options: ["🍎", "🐶", "🚗", "🐟"] },
+          { q: "「 ㄍ 」是什麼？", ans: "🐶", options: ["🐶", "🍎", "🐱", "⭐"] },
+          { q: "「 ㄑ 」是什麼？", ans: "🚗", options: ["🚗", "🐟", "🐱", "🍉"] },
+          { q: "「 ㄇ 」是什麼？", ans: "🐱", options: ["🐱", "🐶", "🍌", "🚗"] },
+          { q: "「 ㄩˊ 」是什麼？", ans: "🐟", options: ["🐟", "🍎", "🚗", "🍉"] },
+          { q: "「 ㄒ 」是什麼？", ans: "🍉", options: ["🍉", "🐶", "🍎", "🐱"] },
+          { q: "「 ㄅ 」是什麼？", ans: "🍌", options: ["🍌", "🐱", "🐶", "🚗"] },
+          { q: "「 ㄧㄤˊ 」是什麼？", ans: "🐑", options: ["🐑", "🐶", "🐟", "🍎"] }
+        ],
+        low: [
+          { q: "「河」的部首是什麼？", ans: "氵(水)", options: ["氵(水)", "木", "口", "日"] },
+          { q: "「草」的部首是什麼？", ans: "艹(草)", options: ["艹(草)", "木", "日", "十"] },
+          { q: "一（ ）花朵", ans: "朵", options: ["朵", "頭", "張", "隻"] },
+          { q: "一（ ）小狗", ans: "隻", options: ["隻", "朵", "條", "本"] },
+          { q: "一（ ）汽車", ans: "輛", options: ["輛", "本", "片", "把"] },
+          { q: "一（ ）白紙", ans: "張", options: ["張", "把", "輛", "條"] },
+          { q: "「白」的相反詞是？", ans: "黑", options: ["黑", "紅", "亮", "高"] },
+          { q: "「木」加「木」是？", ans: "林", options: ["林", "森", "本", "休"] }
+        ],
+        mid: [
+          { q: "「守株待（ ）」填入動物名？", ans: "兔", options: ["兔", "牛", "羊", "鳥"] },
+          { q: "「畫（ ）點睛」填入動物名？", ans: "龍", options: ["龍", "蛇", "馬", "虎"] },
+          { q: "銀「行」的「行」讀音是？", ans: "ㄏㄤˊ", options: ["ㄏㄤˊ", "ㄒㄧㄥˊ", "ㄒㄧㄥˋ", "ㄏㄤˋ"] },
+          { q: "一（ ）宏偉的橋梁", ans: "座", options: ["座", "面", "條", "架"] }
+        ],
+        high: [
+          { q: "「破釜沉舟」代表什麼意思？", ans: "下定決心不留退路", options: ["下定決心不留退路", "打破飯鍋浪費糧食", "乘坐沉沒的船隻", "做事猶豫不決"] },
+          { q: "「出類拔（ ）」形容超越同類？", ans: "萃", options: ["萃", "翠", "碎", "粹"] },
+          { q: "「塞翁失馬，焉知非（ ）」？", ans: "福", options: ["福", "禍", "利", "吉"] }
+        ]
+      },
+      life: {
+        baby: [
+          { q: "看見紅燈應該怎麼做？", ans: "🛑 停下來", options: ["🛑 停下來", "🏃 快跑", "🙈 閉眼", "💃 跳舞"] },
+          { q: "吃東西之前要先做什麼？", ans: "🧼 用肥皂洗手", options: ["🧼 用肥皂洗手", "直接拿來吃", "擦在褲子上", "不用洗"] },
+          { q: "不小心撞到別人要說什麼？", ans: "對不起", options: ["對不起", "謝謝你", "沒關係", "恭喜"] },
+          { q: "別人送禮物給你時要說什麼？", ans: "謝謝你", options: ["謝謝你", "對不起", "不要", "快跑"] }
+        ],
+        low: [
+          { q: "香蕉皮屬於哪一種垃圾？", ans: "廚餘", options: ["廚餘", "一般垃圾", "塑膠回收", "紙類回收"] },
+          { q: "搭乘機車時必須佩戴什麼？", ans: "安全帽", options: ["安全帽", "太陽眼鏡", "毛線帽", "耳機"] },
+          { q: "搭公車看見老爺爺或老奶奶應該？", ans: "主動禮讓座位", options: ["主動禮讓座位", "裝作沒看見", "躺在椅子上", "大聲唱歌"] },
+          { q: "在走廊或樓梯間應該怎麼行動？", ans: "慢慢走不奔跑", options: ["慢慢走不奔跑", "跑步追逐", "滑滑板", "閉眼睛走"] }
+        ],
+        mid: [
+          { q: "臺灣發生火災時要撥打哪一支電話？", ans: "119", options: ["119", "110", "113", "165"] },
+          { q: "遇到可疑詐騙電話要撥打哪一支電話？", ans: "165", options: ["165", "110", "119", "104"] },
+          { q: "地震避難的三步驟順序是什麼？", ans: "趴下、掩護、穩住", options: ["趴下、掩護、穩住", "搭電梯逃跑", "開窗跳樓", "收拾行李"] }
+        ],
+        high: [
+          { q: "臺灣社會安全網「婦幼保護專線」是？", ans: "113", options: ["113", "110", "119", "165"] },
+          { q: "在消費者保護法中，網購一般享幾天猶豫期？", ans: "7天", options: ["7天", "3天", "14天", "30天"] }
+        ]
+      },
+      nature: {
+        baby: [
+          { q: "小狗有幾隻腳？", ans: "4 隻", options: ["4 隻", "2 隻", "6 隻", "8 隻"] },
+          { q: "白天在天空上發光的是？", ans: "☀️ 太陽", options: ["☀️ 太陽", "🌙 月亮", "⭐ 星星", "💡 路燈"] },
+          { q: "小青蛙小時候叫什麼名字？", ans: "🐸 蝌蚪", options: ["🐸 蝌蚪", "🐛 毛毛蟲", "🐟 小魚", "小毛球"] },
+          { q: "大樹長在泥土裡的是哪個部位？", ans: "樹根", options: ["樹根", "葉子", "花朵", "果實"] }
+        ],
+        low: [
+          { q: "昆蟲通常有幾隻腳？", ans: "6隻", options: ["6隻", "8隻", "4隻", "10隻"] },
+          { q: "植物製造養分主要依賴什麼作用？", ans: "光合作用", options: ["光合作用", "呼吸作用", "消化作用", "蒸發作用"] },
+          { q: "水在加熱到沸騰時會變成什麼？", ans: "水蒸氣", options: ["水蒸氣", "冰塊", "乾冰", "石頭"] },
+          { q: "蝴蝶小時候是什麼模樣？", ans: "毛毛蟲", options: ["毛毛蟲", "蝌蚪", "蛹", "蒼蠅"] }
+        ],
+        mid: [
+          { q: "月亮每個月圓缺一次的週期大約是？", ans: "約30天(一個月)", options: ["約30天(一個月)", "約7天", "約100天", "約365天"] },
+          { q: "空氣中含量最多的氣體是？", ans: "氮氣", options: ["氮氣", "氧氣", "二氧化碳", "氦氣"] },
+          { q: "蜘蛛有幾隻腳？（牠不是昆蟲喔！）", ans: "8隻", options: ["8隻", "6隻", "4隻", "10隻"] }
+        ],
+        high: [
+          { q: "地球繞太陽公轉一周的時間大約是？", ans: "一年(約365天)", options: ["一年(約365天)", "一天(24小時)", "一個月", "十年"] },
+          { q: "人體主要的呼吸器官是什麼？", ans: "肺", options: ["肺", "心臟", "胃", "肝臟"] }
+        ]
+      },
+      english: {
+        baby: [
+          { word: "Cat", zh: "🐱 貓咪" }, { word: "Dog", zh: "🐶 狗狗" }, { word: "Apple", zh: "🍎 蘋果" },
+          { word: "Egg", zh: "🥚 雞蛋" }, { word: "Duck", zh: "🦆 鴨子" }, { word: "Sun", zh: "☀️ 太陽" },
+          { word: "Fish", zh: "🐟 小魚" }, { word: "Car", zh: "🚗 汽車" }, { word: "Star", zh: "⭐ 星星" }
+        ],
+        low: [
+          { word: "Book", zh: "書本" }, { word: "Pencil", zh: "鉛筆" }, { word: "Water", zh: "水" },
+          { word: "Hand", zh: "手" }, { word: "Eye", zh: "眼睛" }, { word: "Door", zh: "門" },
+          { word: "Chair", zh: "椅子" }, { word: "School", zh: "學校" }
+        ],
+        mid: [
+          { word: "Teacher", zh: "老師" }, { word: "Student", zh: "學生" }, { word: "Summer", zh: "夏天" },
+          { word: "Winter", zh: "冬天" }, { word: "Doctor", zh: "醫生" }, { word: "Rainy", zh: "下雨的" }
+        ],
+        high: [
+          { word: "Brave", zh: "勇敢的" }, { word: "Honest", zh: "誠實的" }, { word: "Nature", zh: "大自然" },
+          { word: "Protect", zh: "保護" }, { word: "Planet", zh: "行星/地球" }, { word: "Future", zh: "未來" }
+        ]
+      }
+    };
 
-    async function loadExternalQuestions() {
+    // 優先使用內建題庫，若有外部檔案則動態疊加
+    let globalQuestions = JSON.parse(JSON.stringify(DEFAULT_QUESTIONS));
+
+    async function tryLoadExternalQuestions() {
       try {
         const response = await fetch('./questions.json?t=' + Date.now());
         if (response.ok) {
-          globalQuestions = await response.json();
+          const ext = await response.json();
+          // 合併題庫
+          ['chinese', 'life', 'nature', 'english'].forEach(sub => {
+            if (ext[sub]) {
+              ['baby', 'low', 'mid', 'high'].forEach(lvl => {
+                if (ext[sub][lvl] && ext[sub][lvl].length) {
+                  globalQuestions[sub][lvl] = ext[sub][lvl];
+                }
+              });
+            }
+          });
         }
       } catch (err) {}
-      nextQuestion();
     }
 
     // 賽跑狀態
@@ -697,9 +789,9 @@
     }
 
     // ==========================================
-    // 🌐 智慧出題中樞（含教育部萌典 API 連動）
+    // 萬題生成器 ＋ 本次開啟防重複過濾
     // ==========================================
-    async function nextQuestion() {
+    function nextQuestion() {
       isProcessing = false;
       document.getElementById('feedback').innerText = '';
       const box = document.getElementById('options');
@@ -710,13 +802,7 @@
       } else if (currentSubject === 'multiply') {
         generateMultiplyQuestion();
       } else if (currentSubject === 'chinese') {
-        // 幼兒模式優先使用純圖案題；低中高年級有 50% 機率直接連線教育部萌典生字庫！
-        if (currentLevel !== 'baby' && Math.random() > 0.4) {
-          const success = await generateMoeDictQuestion();
-          if (!success) generateGenericQuestion(globalQuestions.chinese, 'chinese');
-        } else {
-          generateGenericQuestion(globalQuestions.chinese, 'chinese');
-        }
+        generateGenericQuestion(globalQuestions.chinese, 'chinese');
       } else if (currentSubject === 'life') {
         generateGenericQuestion(globalQuestions.life, 'life');
       } else if (currentSubject === 'nature') {
@@ -726,59 +812,6 @@
       }
 
       updateSessionCountUI();
-    }
-
-    // 🏛️ 教育部萌典 API 題型即時組裝函式
-    async function generateMoeDictQuestion() {
-      const char = MOE_WORD_BANK[Math.floor(Math.random() * MOE_WORD_BANK.length)];
-      try {
-        const res = await fetch(`https://www.moedict.tw/uni/${encodeURIComponent(char)}.json`);
-        if (!res.ok) return false;
-        const data = await res.json();
-
-        // 題目類型 1：部首大考驗
-        if (data.radical && Math.random() > 0.5) {
-          const cleanRadical = data.radical.replace(/[（\(].*?[）\)]/g, '').trim();
-          const qText = `「${char}」的部首是什麼？`;
-          if (sessionPlayedQuestions.has(qText)) return false;
-          sessionPlayedQuestions.add(qText);
-
-          currentAnswer = { q: qText, ans: cleanRadical };
-          document.getElementById('question').innerText = qText;
-          document.getElementById('audio-btn').style.display = 'inline-block';
-          setTimeout(() => speakCurrentQuestion(), 60);
-
-          let wrongRadicals = COMMON_RADICALS.filter(r => !r.includes(cleanRadical));
-          wrongRadicals.sort(() => Math.random() - 0.5);
-
-          let options = [cleanRadical, wrongRadicals[0], wrongRadicals[1], wrongRadicals[2]];
-          options.sort(() => Math.random() - 0.5);
-          renderButtons(options, val => val === cleanRadical, false);
-          return true;
-        }
-
-        // 題目類型 2：總筆畫數挑戰
-        if (data.stroke_count) {
-          const count = data.stroke_count;
-          const qText = `「${char}」一共有幾畫？`;
-          if (sessionPlayedQuestions.has(qText)) return false;
-          sessionPlayedQuestions.add(qText);
-
-          currentAnswer = { q: qText, ans: `${count} 畫` };
-          document.getElementById('question').innerText = qText;
-          document.getElementById('audio-btn').style.display = 'inline-block';
-          setTimeout(() => speakCurrentQuestion(), 60);
-
-          let options = [`${count} 畫`, `${count + 1} 畫`, `${Math.max(1, count - 1)} 畫`, `${count + 2} 畫`];
-          options = Array.from(new Set(options));
-          options.sort(() => Math.random() - 0.5);
-          renderButtons(options, val => val === `${count} 畫`, false);
-          return true;
-        }
-      } catch (e) {
-        return false;
-      }
-      return false;
     }
 
     function generateMathQuestion() {
@@ -854,10 +887,10 @@
     }
 
     function generateGenericQuestion(database, subjectName) {
-      const list = (database && database[currentLevel]) ? database[currentLevel] : [];
+      let list = (database && database[currentLevel]) ? database[currentLevel] : [];
       if (!list.length) {
-        document.getElementById('question').innerText = "題目載入中...";
-        return;
+        list = (DEFAULT_QUESTIONS[subjectName] && DEFAULT_QUESTIONS[subjectName][currentLevel]) 
+               ? DEFAULT_QUESTIONS[subjectName][currentLevel] : [];
       }
 
       let available = list.filter(item => !sessionPlayedQuestions.has(item.q));
@@ -881,8 +914,8 @@
 
     function generateEnglishQuestion() {
       document.getElementById('audio-btn').style.display = 'inline-block';
-      const list = (globalQuestions.english && globalQuestions.english[currentLevel]) ? globalQuestions.english[currentLevel] : [];
-      if (!list.length) return;
+      let list = (globalQuestions.english && globalQuestions.english[currentLevel]) ? globalQuestions.english[currentLevel] : [];
+      if (!list.length) list = DEFAULT_QUESTIONS.english[currentLevel] || DEFAULT_QUESTIONS.english['low'];
 
       let available = list.filter(item => !sessionPlayedQuestions.has(item.word));
       if (available.length === 0) {
@@ -956,9 +989,11 @@
       }
     }
 
+    // 啟動 App
     switchLevel(currentLevel);
     saveStats();
-    loadExternalQuestions();
+    nextQuestion();
+    tryLoadExternalQuestions();
   </script>
 </body>
 </html>
