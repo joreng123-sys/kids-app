@@ -341,6 +341,18 @@
       font-weight: 900;
       cursor: pointer;
     }
+
+    .race-result-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(43, 27, 69, 0.78);
+      backdrop-filter: blur(4px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      padding: 20px;
+    }
   </style>
 </head>
 <body onclick="ensureAudioResumed()">
@@ -392,7 +404,7 @@
     </div>
 
     <div class="question-box">
-      <div class="question-title" id="question">題庫載入中...</div>
+      <div class="question-title" id="question">題目載入中...</div>
       <button class="audio-btn" id="audio-btn" style="display: none;" onclick="speakCurrentQuestion()">🔊 聽題目</button>
     </div>
 
@@ -429,34 +441,38 @@
     let currentAnswer = null;
     let isProcessing = false;
 
-    // 本次開啟不重複集合
     const sessionPlayedQuestions = new Set();
     function updateSessionCountUI() {
       document.getElementById('session-count-tag').innerText = `本次挑戰：${sessionPlayedQuestions.size} 題不重複`;
     }
 
-    // 外部題庫儲存變數
     let globalQuestions = { chinese: {}, life: {}, nature: {}, english: {} };
 
-    // 賽跑狀態
-    let isRaceMode = false;
-    let raceQuestionIndex = 0;
-    let ponyPositions = [2, 2, 2, 2, 2];
+    // ========================================================
+    // 🏛️ 臺灣教育部常用生字表（串接教育部萌典 API 生成萬題用）
+    // ========================================================
+    const MOE_WORD_BANK = [
+      "林", "森", "河", "海", "草", "花", "樹", "星", "晴", "明", "貓", "狗", "魚", "鳥", 
+      "山", "水", "火", "風", "雨", "雪", "天", "地", "人", "手", "足", "目", "口", "耳", 
+      "春", "夏", "秋", "冬", "晨", "夜", "日", "月", "光", "書", "筆", "紙", "車", "船", 
+      "門", "窗", "家", "校", "友", "愛", "學", "習", "讀", "寫", "聽", "說", "跑", "跳"
+    ];
+    const COMMON_RADICALS = ["木", "氵(水)", "艹(草)", "口", "日", "目", "足", "言", "手", "火", "門", "女", "金", "土"];
 
-    // ==========================================
-    // 🌐 非同步讀取外部題庫 JSON (關鍵步驟)
-    // ==========================================
     async function loadExternalQuestions() {
       try {
         const response = await fetch('./questions.json?t=' + Date.now());
         if (response.ok) {
           globalQuestions = await response.json();
         }
-      } catch (err) {
-        console.warn("使用預設題庫", err);
-      }
+      } catch (err) {}
       nextQuestion();
     }
+
+    // 賽跑狀態
+    let isRaceMode = false;
+    let raceQuestionIndex = 0;
+    let ponyPositions = [2, 2, 2, 2, 2];
 
     function startRaceMode() {
       ensureAudioResumed();
@@ -622,7 +638,6 @@
       nextQuestion();
     }
 
-    // 語音引擎
     let cachedVoices = [];
     function reloadVoices() {
       if ('speechSynthesis' in window) cachedVoices = window.speechSynthesis.getVoices();
@@ -682,22 +697,88 @@
     }
 
     // ==========================================
-    // 出題調度
+    // 🌐 智慧出題中樞（含教育部萌典 API 連動）
     // ==========================================
-    function nextQuestion() {
+    async function nextQuestion() {
       isProcessing = false;
       document.getElementById('feedback').innerText = '';
       const box = document.getElementById('options');
       box.innerHTML = '';
 
-      if (currentSubject === 'math') generateMathQuestion();
-      else if (currentSubject === 'multiply') generateMultiplyQuestion();
-      else if (currentSubject === 'chinese') generateGenericQuestion(globalQuestions.chinese, 'chinese');
-      else if (currentSubject === 'life') generateGenericQuestion(globalQuestions.life, 'life');
-      else if (currentSubject === 'nature') generateGenericQuestion(globalQuestions.nature, 'nature');
-      else if (currentSubject === 'english') generateEnglishQuestion();
+      if (currentSubject === 'math') {
+        generateMathQuestion();
+      } else if (currentSubject === 'multiply') {
+        generateMultiplyQuestion();
+      } else if (currentSubject === 'chinese') {
+        // 幼兒模式優先使用純圖案題；低中高年級有 50% 機率直接連線教育部萌典生字庫！
+        if (currentLevel !== 'baby' && Math.random() > 0.4) {
+          const success = await generateMoeDictQuestion();
+          if (!success) generateGenericQuestion(globalQuestions.chinese, 'chinese');
+        } else {
+          generateGenericQuestion(globalQuestions.chinese, 'chinese');
+        }
+      } else if (currentSubject === 'life') {
+        generateGenericQuestion(globalQuestions.life, 'life');
+      } else if (currentSubject === 'nature') {
+        generateGenericQuestion(globalQuestions.nature, 'nature');
+      } else if (currentSubject === 'english') {
+        generateEnglishQuestion();
+      }
 
       updateSessionCountUI();
+    }
+
+    // 🏛️ 教育部萌典 API 題型即時組裝函式
+    async function generateMoeDictQuestion() {
+      const char = MOE_WORD_BANK[Math.floor(Math.random() * MOE_WORD_BANK.length)];
+      try {
+        const res = await fetch(`https://www.moedict.tw/uni/${encodeURIComponent(char)}.json`);
+        if (!res.ok) return false;
+        const data = await res.json();
+
+        // 題目類型 1：部首大考驗
+        if (data.radical && Math.random() > 0.5) {
+          const cleanRadical = data.radical.replace(/[（\(].*?[）\)]/g, '').trim();
+          const qText = `「${char}」的部首是什麼？`;
+          if (sessionPlayedQuestions.has(qText)) return false;
+          sessionPlayedQuestions.add(qText);
+
+          currentAnswer = { q: qText, ans: cleanRadical };
+          document.getElementById('question').innerText = qText;
+          document.getElementById('audio-btn').style.display = 'inline-block';
+          setTimeout(() => speakCurrentQuestion(), 60);
+
+          let wrongRadicals = COMMON_RADICALS.filter(r => !r.includes(cleanRadical));
+          wrongRadicals.sort(() => Math.random() - 0.5);
+
+          let options = [cleanRadical, wrongRadicals[0], wrongRadicals[1], wrongRadicals[2]];
+          options.sort(() => Math.random() - 0.5);
+          renderButtons(options, val => val === cleanRadical, false);
+          return true;
+        }
+
+        // 題目類型 2：總筆畫數挑戰
+        if (data.stroke_count) {
+          const count = data.stroke_count;
+          const qText = `「${char}」一共有幾畫？`;
+          if (sessionPlayedQuestions.has(qText)) return false;
+          sessionPlayedQuestions.add(qText);
+
+          currentAnswer = { q: qText, ans: `${count} 畫` };
+          document.getElementById('question').innerText = qText;
+          document.getElementById('audio-btn').style.display = 'inline-block';
+          setTimeout(() => speakCurrentQuestion(), 60);
+
+          let options = [`${count} 畫`, `${count + 1} 畫`, `${Math.max(1, count - 1)} 畫`, `${count + 2} 畫`];
+          options = Array.from(new Set(options));
+          options.sort(() => Math.random() - 0.5);
+          renderButtons(options, val => val === `${count} 畫`, false);
+          return true;
+        }
+      } catch (e) {
+        return false;
+      }
+      return false;
     }
 
     function generateMathQuestion() {
@@ -875,7 +956,6 @@
       }
     }
 
-    // 啟動載入外部題庫
     switchLevel(currentLevel);
     saveStats();
     loadExternalQuestions();
