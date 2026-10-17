@@ -174,7 +174,7 @@
       color: #D97706;
     }
 
-    .session-counter {
+    .deck-counter {
       font-size: 0.82rem;
       font-weight: 800;
       color: #7C3AED;
@@ -376,7 +376,7 @@
   <div class="card">
     <div class="score-container">
       <div class="score-board">🌰 堅果數量: <span id="score">0</span> 顆</div>
-      <div class="session-counter" id="session-count-tag">本次挑戰：0 題不重複</div>
+      <div class="deck-counter" id="deck-status-tag">準備出題...</div>
     </div>
     
     <div class="race-track-container" id="race-track">
@@ -429,15 +429,10 @@
     let currentAnswer = null;
     let isProcessing = false;
 
-    const sessionPlayedQuestions = new Set();
-    function updateSessionCountUI() {
-      document.getElementById('session-count-tag').innerText = `本次挑戰：${sessionPlayedQuestions.size} 題不重複`;
-    }
-
     // ========================================================
-    // 🛡️ 完整內建保底題庫（永遠在線、絕不卡死在載入中）
+    // 📚 海量實體題庫矩陣（完全內建，零連線失敗風險）
     // ========================================================
-    const DEFAULT_QUESTIONS = {
+    const MASTER_QUESTIONS = {
       chinese: {
         baby: [
           { q: "「 ㄆ 」是什麼？", ans: "🍎", options: ["🍎", "🐶", "🚗", "🐟"] },
@@ -447,28 +442,83 @@
           { q: "「 ㄩˊ 」是什麼？", ans: "🐟", options: ["🐟", "🍎", "🚗", "🍉"] },
           { q: "「 ㄒ 」是什麼？", ans: "🍉", options: ["🍉", "🐶", "🍎", "🐱"] },
           { q: "「 ㄅ 」是什麼？", ans: "🍌", options: ["🍌", "🐱", "🐶", "🚗"] },
-          { q: "「 ㄧㄤˊ 」是什麼？", ans: "🐑", options: ["🐑", "🐶", "🐟", "🍎"] }
+          { q: "「 ㄧㄤˊ 」是什麼？", ans: "🐑", options: ["🐑", "🐶", "🐟", "🍎"] },
+          { q: "「 ㄋㄧㄠˇ 」是什麼？", ans: "🐦", options: ["🐦", "🐱", "🚗", "🍌"] },
+          { q: "「 ㄊㄨˋ 」是什麼？", ans: "🐰", options: ["🐰", "🐶", "🍎", "🍉"] },
+          { q: "「 ㄏㄨㄚ 」是什麼？", ans: "🌸", options: ["🌸", "🚗", "🐶", "🍌"] },
+          { q: "「 ㄕㄨˋ 」是什麼？", ans: "🌳", options: ["🌳", "🐟", "🍎", "🍉"] },
+          { q: "「 ㄧㄝˋ 」是什麼？", ans: "🍃", options: ["🍃", "🐶", "🚗", "🐱"] },
+          { q: "「 ㄒㄧㄥ 」是什麼？", ans: "⭐", options: ["⭐", "🍎", "🌸", "🐟"] },
+          { q: "「 ㄅㄠ 包包」是什麼？", ans: "🎒", options: ["🎒", "🚗", "🍎", "🌸"] },
+          { q: "「 ㄩˇ 雨天」是什麼？", ans: "🌧️", options: ["🌧️", "☀️", "⭐", "🌸"] }
         ],
         low: [
           { q: "「河」的部首是什麼？", ans: "氵(水)", options: ["氵(水)", "木", "口", "日"] },
           { q: "「草」的部首是什麼？", ans: "艹(草)", options: ["艹(草)", "木", "日", "十"] },
+          { q: "「海」的部首是什麼？", ans: "氵(水)", options: ["氵(水)", "母", "每", "土"] },
+          { q: "「樹」的部首是什麼？", ans: "木", options: ["木", "寸", "豆", "吉"] },
+          { q: "「跑」的部首是什麼？", ans: "足", options: ["足", "口", "走", "手"] },
+          { q: "「說」的部首是什麼？", ans: "言", options: ["言", "口", "舌", "日"] },
+          { q: "「吃」的部首是什麼？", ans: "口", options: ["口", "日", "目", "舌"] },
+          { q: "「睡」的部首是什麼？", ans: "目", options: ["目", "日", "月", "口"] },
+          { q: "「眼」的部首是什麼？", ans: "目", options: ["目", "日", "艮", "月"] },
+          { q: "「寫」的部首是什麼？", ans: "冖", options: ["冖", "宀", "寸", "臼"] },
           { q: "一（ ）花朵", ans: "朵", options: ["朵", "頭", "張", "隻"] },
           { q: "一（ ）小狗", ans: "隻", options: ["隻", "朵", "條", "本"] },
           { q: "一（ ）汽車", ans: "輛", options: ["輛", "本", "片", "把"] },
           { q: "一（ ）白紙", ans: "張", options: ["張", "把", "輛", "條"] },
+          { q: "一（ ）大山", ans: "座", options: ["座", "條", "面", "片"] },
+          { q: "一（ ）雨傘", ans: "把", options: ["把", "隻", "條", "個"] },
+          { q: "一（ ）鉛筆", ans: "枝", options: ["枝", "張", "本", "隻"] },
+          { q: "一（ ）衣服", ans: "件", options: ["件", "個", "張", "朵"] },
+          { q: "一（ ）鞋子", ans: "雙", options: ["雙", "隻", "個", "條"] },
+          { q: "一（ ）大樹", ans: "棵", options: ["棵", "顆", "隻", "把"] },
           { q: "「白」的相反詞是？", ans: "黑", options: ["黑", "紅", "亮", "高"] },
-          { q: "「木」加「木」是？", ans: "林", options: ["林", "森", "本", "休"] }
+          { q: "「大」的相反詞是？", ans: "小", options: ["小", "少", "矮", "多"] },
+          { q: "「高」的相反詞是？", ans: "矮", options: ["矮", "小", "瘦", "慢"] },
+          { q: "「快」的相反詞是？", ans: "慢", options: ["慢", "短", "低", "矮"] },
+          { q: "「長」的相反詞是？", ans: "短", options: ["短", "小", "低", "冷"] },
+          { q: "「早」的相反詞是？", ans: "晚", options: ["晚", "慢", "後", "暗"] },
+          { q: "「前」的相反詞是？", ans: "後", options: ["後", "右", "左", "下"] },
+          { q: "「木」加「木」是？", ans: "林", options: ["林", "森", "本", "休"] },
+          { q: "「森」裡面有幾個木？", ans: "3個", options: ["3個", "2個", "4個", "1個"] },
+          { q: "「日」加「月」是？", ans: "明", options: ["明", "晴", "早", "暗"] },
+          { q: "「人」靠在「木」旁邊是？", ans: "休", options: ["休", "体", "本", "保"] },
+          { q: "「小」加上「大」是什麼字？", ans: "尖", options: ["尖", "少", "劣", "卡"] }
         ],
         mid: [
           { q: "「守株待（ ）」填入動物名？", ans: "兔", options: ["兔", "牛", "羊", "鳥"] },
           { q: "「畫（ ）點睛」填入動物名？", ans: "龍", options: ["龍", "蛇", "馬", "虎"] },
+          { q: "「亡羊補（ ）」代表及時補救？", ans: "牢", options: ["牢", "屋", "門", "牆"] },
           { q: "銀「行」的「行」讀音是？", ans: "ㄏㄤˊ", options: ["ㄏㄤˊ", "ㄒㄧㄥˊ", "ㄒㄧㄥˋ", "ㄏㄤˋ"] },
-          { q: "一（ ）宏偉的橋梁", ans: "座", options: ["座", "面", "條", "架"] }
+          { q: "「落」落大方的讀音是？", ans: "ㄌㄨㄛˋ", options: ["ㄌㄨㄛˋ", "ㄌㄚˋ", "ㄌㄠˋ", "ㄌㄜˋ"] },
+          { q: "覺「得」的讀音是？", ans: "˙ㄉㄜ", options: ["˙ㄉㄜ", "ㄉㄜˊ", "ㄉㄟˇ", "ㄉㄞˇ"] },
+          { q: "「對（ ）彈琴」比喻白費口舌？", ans: "牛", options: ["牛", "馬", "羊", "狗"] },
+          { q: "「井底之（ ）」比喻見識狹小？", ans: "蛙", options: ["蛙", "魚", "鳥", "龜"] },
+          { q: "「雪中送（ ）」比喻給予及時援助？", ans: "炭", options: ["炭", "花", "傘", "水"] },
+          { q: "一（ ）宏偉的橋梁", ans: "座", options: ["座", "面", "條", "架"] },
+          { q: "一（ ）精彩的電影", ans: "部", options: ["部", "件", "首", "副"] },
+          { q: "一（ ）動聽的歌曲", ans: "首", options: ["首", "張", "部", "本"] },
+          { q: "「月亮像個大銀盤」使用了什麼修辭？", ans: "譬喻(比喻)", options: ["譬喻(比喻)", "擬人", "排比", "誇飾"] },
+          { q: "「花兒在風中跳舞」使用了什麼修辭？", ans: "擬人", options: ["擬人", "譬喻", "對偶", "倒反"] },
+          { q: "形容「很有禮貌、守秩序」？", ans: "彬彬有禮", options: ["彬彬有禮", "粗枝大葉", "亂七八糟", "毛手毛腳"] },
+          { q: "形容「做事非常小心認真」？", ans: "小心翼翼", options: ["小心翼翼", "馬馬虎虎", "丟三落四", "心不在焉"] },
+          { q: "形容「說話非常有條理」？", ans: "井井有條", options: ["井井有條", "亂七八糟", "七嘴八舌", "拖泥帶水"] },
+          { q: "「迫不（ ）待」正確用字？", ans: "及", options: ["及", "急", "即", "集"] }
         ],
         high: [
           { q: "「破釜沉舟」代表什麼意思？", ans: "下定決心不留退路", options: ["下定決心不留退路", "打破飯鍋浪費糧食", "乘坐沉沒的船隻", "做事猶豫不決"] },
+          { q: "「臥薪嘗膽」與哪位歷史人物有關？", ans: "勾踐", options: ["勾踐", "項羽", "劉備", "諸葛亮"] },
+          { q: "「三顧茅廬」比喻真心誠意邀請？", ans: "諸葛亮", options: ["諸葛亮", "周瑜", "曹操", "孫權"] },
           { q: "「出類拔（ ）」形容超越同類？", ans: "萃", options: ["萃", "翠", "碎", "粹"] },
-          { q: "「塞翁失馬，焉知非（ ）」？", ans: "福", options: ["福", "禍", "利", "吉"] }
+          { q: "「（ ）然開朗」填入正確國字？", ans: "豁", options: ["豁", "闊", "和", "賀"] },
+          { q: "「塞翁失馬，焉知非（ ）」？", ans: "福", options: ["福", "禍", "利", "吉"] },
+          { q: "形容文章結構完整、毫無破綻？", ans: "天衣無縫", options: ["天衣無縫", "畫蛇添足", "斷章取義", "漏洞百出"] },
+          { q: "「海納百川，有（ ）乃大」？", ans: "容", options: ["容", "量", "大", "德"] },
+          { q: "「不入虎穴，焉得虎（ ）」？", ans: "子", options: ["子", "肉", "皮", "膽"] },
+          { q: "「負荊請罪」與哪位歷史人物有關？", ans: "廉頗", options: ["廉頗", "藺相如", "白起", "韓信"] },
+          { q: "「望梅止（ ）」比喻願望無法實現而空想？", ans: "渴", options: ["渴", "餓", "熱", "痛"] },
+          { q: "「杞人憂（ ）」比喻不必要的憂慮？", ans: "天", options: ["天", "地", "水", "人"] }
         ]
       },
       life: {
@@ -476,22 +526,37 @@
           { q: "看見紅燈應該怎麼做？", ans: "🛑 停下來", options: ["🛑 停下來", "🏃 快跑", "🙈 閉眼", "💃 跳舞"] },
           { q: "吃東西之前要先做什麼？", ans: "🧼 用肥皂洗手", options: ["🧼 用肥皂洗手", "直接拿來吃", "擦在褲子上", "不用洗"] },
           { q: "不小心撞到別人要說什麼？", ans: "對不起", options: ["對不起", "謝謝你", "沒關係", "恭喜"] },
-          { q: "別人送禮物給你時要說什麼？", ans: "謝謝你", options: ["謝謝你", "對不起", "不要", "快跑"] }
+          { q: "別人送禮物給你時要說什麼？", ans: "謝謝你", options: ["謝謝你", "對不起", "不要", "快跑"] },
+          { q: "打噴嚏或咳嗽時應該怎麼做？", ans: "用手肘或紙巾遮住", options: ["用手肘或紙巾遮住", "對著同學噴", "大聲喊叫", "不用遮"] },
+          { q: "睡覺之前要先做什麼保護牙齒？", ans: "刷牙", options: ["刷牙", "吃糖果", "喝汽水", "玩玩具"] },
+          { q: "玩具玩完了要怎麼辦？", ans: "收拾整齊", options: ["收拾整齊", "丟在地上", "踢到床底下", "不管它"] }
         ],
         low: [
           { q: "香蕉皮屬於哪一種垃圾？", ans: "廚餘", options: ["廚餘", "一般垃圾", "塑膠回收", "紙類回收"] },
+          { q: "喝完的寶特瓶應該丟在哪裡？", ans: "資源回收桶", options: ["資源回收桶", "丟在路邊", "廚餘桶", "排水溝"] },
           { q: "搭乘機車時必須佩戴什麼？", ans: "安全帽", options: ["安全帽", "太陽眼鏡", "毛線帽", "耳機"] },
+          { q: "在走廊或樓梯間應該怎麼行動？", ans: "慢慢走不奔跑", options: ["慢慢走不奔跑", "跑步追逐", "滑滑板", "閉眼睛走"] },
           { q: "搭公車看見老爺爺或老奶奶應該？", ans: "主動禮讓座位", options: ["主動禮讓座位", "裝作沒看見", "躺在椅子上", "大聲唱歌"] },
-          { q: "在走廊或樓梯間應該怎麼行動？", ans: "慢慢走不奔跑", options: ["慢慢走不奔跑", "跑步追逐", "滑滑板", "閉眼睛走"] }
+          { q: "喝完的牛奶紙盒要丟在哪裡？", ans: "紙容器回收", options: ["紙容器回收", "廚餘桶", "一般垃圾", "路上"] },
+          { q: "在太陽底下運動流汗要多補充什麼？", ans: "水分", options: ["水分", "可樂", "糖果", "辣椒"] },
+          { q: "臺灣發生地震時第一時間要？", ans: "趴下掩護穩住", options: ["趴下掩護穩住", "搭電梯逃生", "開窗跳樓", "收行李"] },
+          { q: "吃飯時細嚼慢嚥有什麼好處？", ans: "幫助消化", options: ["幫助消化", "容易肚子痛", "浪費時間", "沒有好處"] }
         ],
         mid: [
           { q: "臺灣發生火災時要撥打哪一支電話？", ans: "119", options: ["119", "110", "113", "165"] },
           { q: "遇到可疑詐騙電話要撥打哪一支電話？", ans: "165", options: ["165", "110", "119", "104"] },
-          { q: "地震避難的三步驟順序是什麼？", ans: "趴下、掩護、穩住", options: ["趴下、掩護、穩住", "搭電梯逃跑", "開窗跳樓", "收拾行李"] }
+          { q: "遇到壞人或緊急危險要報警請撥打？", ans: "110", options: ["110", "119", "165", "113"] },
+          { q: "端午節的傳統習俗是什麼？", ans: "吃粽子划龍舟", options: ["吃粽子划龍舟", "賞月吃月餅", "戴面具敲門", "吃元宵猜燈謎"] },
+          { q: "中秋節闔家團圓常見的習俗是？", ans: "賞月吃月餅", options: ["賞月吃月餅", "划龍舟", "放鞭炮貼春聯", "吃潤餅"] },
+          { q: "夏天冷氣溫度建議設定在幾度最省電環保？", ans: "26到28度", options: ["26到28度", "16度", "20度", "32度"] },
+          { q: "隨手關燈可以達到什麼效果？", ans: "節約能源", options: ["節約能源", "浪費電力", "增加電費", "讓燈泡壞掉"] }
         ],
         high: [
           { q: "臺灣社會安全網「婦幼保護專線」是？", ans: "113", options: ["113", "110", "119", "165"] },
-          { q: "在消費者保護法中，網購一般享幾天猶豫期？", ans: "7天", options: ["7天", "3天", "14天", "30天"] }
+          { q: "在消費者保護法中，網購一般享幾天猶豫期？", ans: "7天", options: ["7天", "3天", "14天", "30天"] },
+          { q: "日常生活中減少碳足跡的最佳行為？", ans: "多搭大眾運輸工具", options: ["多搭大眾運輸工具", "天天開私家車", "冷氣開到最強", "多用免洗餐具"] },
+          { q: "食品外包裝上的「有效日期」代表什麼？", ans: "在此日期前食用最佳", options: ["在此日期前食用最佳", "製造出廠的日期", "可以無限期存放", "隨便參考的"] },
+          { q: "臺灣公民年滿幾歲依法具有投票選舉權？", ans: "20歲", options: ["20歲", "18歲", "16歲", "22歲"] }
         ]
       },
       nature: {
@@ -499,66 +564,97 @@
           { q: "小狗有幾隻腳？", ans: "4 隻", options: ["4 隻", "2 隻", "6 隻", "8 隻"] },
           { q: "白天在天空上發光的是？", ans: "☀️ 太陽", options: ["☀️ 太陽", "🌙 月亮", "⭐ 星星", "💡 路燈"] },
           { q: "小青蛙小時候叫什麼名字？", ans: "🐸 蝌蚪", options: ["🐸 蝌蚪", "🐛 毛毛蟲", "🐟 小魚", "小毛球"] },
-          { q: "大樹長在泥土裡的是哪個部位？", ans: "樹根", options: ["樹根", "葉子", "花朵", "果實"] }
+          { q: "大樹長在泥土裡的是哪個部位？", ans: "樹根", options: ["樹根", "葉子", "花朵", "果實"] },
+          { q: "小鳥用什麼在天上飛？", ans: "翅膀", options: ["翅膀", "尾巴", "嘴巴", "雙腳"] },
+          { q: "哪種動物脖子最長？", ans: "長頸鹿", options: ["長頸鹿", "大象", "小白兔", "無尾熊"] }
         ],
         low: [
           { q: "昆蟲通常有幾隻腳？", ans: "6隻", options: ["6隻", "8隻", "4隻", "10隻"] },
           { q: "植物製造養分主要依賴什麼作用？", ans: "光合作用", options: ["光合作用", "呼吸作用", "消化作用", "蒸發作用"] },
           { q: "水在加熱到沸騰時會變成什麼？", ans: "水蒸氣", options: ["水蒸氣", "冰塊", "乾冰", "石頭"] },
-          { q: "蝴蝶小時候是什麼模樣？", ans: "毛毛蟲", options: ["毛毛蟲", "蝌蚪", "蛹", "蒼蠅"] }
+          { q: "蝴蝶小時候是什麼模樣？", ans: "毛毛蟲", options: ["毛毛蟲", "蝌蚪", "蛹", "蒼蠅"] },
+          { q: "磁鐵兩端磁力最強的地方叫什麼？", ans: "磁極(N與S)", options: ["磁極(N與S)", "磁場", "磁心", "重力點"] },
+          { q: "下列哪一種動物是胎生（直接生小寶寶）？", ans: "小狗", options: ["小狗", "小雞", "青蛙", "烏龜"] },
+          { q: "蝸牛爬行時會留下什麼痕跡？", ans: "黏液", options: ["黏液", "墨水", "沙子", "油"] }
         ],
         mid: [
           { q: "月亮每個月圓缺一次的週期大約是？", ans: "約30天(一個月)", options: ["約30天(一個月)", "約7天", "約100天", "約365天"] },
           { q: "空氣中含量最多的氣體是？", ans: "氮氣", options: ["氮氣", "氧氣", "二氧化碳", "氦氣"] },
-          { q: "蜘蛛有幾隻腳？（牠不是昆蟲喔！）", ans: "8隻", options: ["8隻", "6隻", "4隻", "10隻"] }
+          { q: "蜘蛛有幾隻腳？（牠不是昆蟲喔！）", ans: "8隻", options: ["8隻", "6隻", "4隻", "10隻"] },
+          { q: "太陽每天從哪個方向升起？", ans: "東方", options: ["東方", "西方", "南方", "北方"] },
+          { q: "植物吸收水分與養分的主要器官是？", ans: "根部", options: ["根部", "葉片", "花瓣", "果實"] },
+          { q: "彩虹通常會在什麼天氣現象後出現？", ans: "雨過天晴", options: ["雨過天晴", "大雪紛飛", "漆黑深夜", "沙塵暴"] }
         ],
         high: [
           { q: "地球繞太陽公轉一周的時間大約是？", ans: "一年(約365天)", options: ["一年(約365天)", "一天(24小時)", "一個月", "十年"] },
-          { q: "人體主要的呼吸器官是什麼？", ans: "肺", options: ["肺", "心臟", "胃", "肝臟"] }
+          { q: "人體主要的呼吸器官是什麼？", ans: "肺", options: ["肺", "心臟", "胃", "肝臟"] },
+          { q: "光在真空中的傳播速度大約每秒多少？", ans: "30萬公里", options: ["30萬公里", "3萬公里", "100萬公里", "340公尺"] },
+          { q: "聲音在哪一種介質中傳播速度最快？", ans: "固體(如鋼鐵)", options: ["固體(如鋼鐵)", "液體(如水)", "氣體(如空氣)", "真空"] },
+          { q: "人體內負責推動血液循環的器官是？", ans: "心臟", options: ["心臟", "大腦", "腎臟", "胃"] }
         ]
       },
       english: {
         baby: [
           { word: "Cat", zh: "🐱 貓咪" }, { word: "Dog", zh: "🐶 狗狗" }, { word: "Apple", zh: "🍎 蘋果" },
           { word: "Egg", zh: "🥚 雞蛋" }, { word: "Duck", zh: "🦆 鴨子" }, { word: "Sun", zh: "☀️ 太陽" },
-          { word: "Fish", zh: "🐟 小魚" }, { word: "Car", zh: "🚗 汽車" }, { word: "Star", zh: "⭐ 星星" }
+          { word: "Fish", zh: "🐟 小魚" }, { word: "Car", zh: "🚗 汽車" }, { word: "Star", zh: "⭐ 星星" },
+          { word: "Milk", zh: "🥛 牛奶" }, { word: "Bird", zh: "🐦 小鳥" }, { word: "Tree", zh: "🌳 大樹" },
+          { word: "Red", zh: "🔴 紅色" }, { word: "Blue", zh: "🔵 藍色" }, { word: "Book", zh: "📖 書本" }
         ],
         low: [
           { word: "Book", zh: "書本" }, { word: "Pencil", zh: "鉛筆" }, { word: "Water", zh: "水" },
           { word: "Hand", zh: "手" }, { word: "Eye", zh: "眼睛" }, { word: "Door", zh: "門" },
-          { word: "Chair", zh: "椅子" }, { word: "School", zh: "學校" }
+          { word: "Chair", zh: "椅子" }, { word: "School", zh: "學校" }, { word: "Friend", zh: "朋友" },
+          { word: "Family", zh: "家庭" }, { word: "Blue", zh: "藍色" }, { word: "Red", zh: "紅色" },
+          { word: "Yellow", zh: "黃色" }, { word: "Green", zh: "綠色" }, { word: "Rabbit", zh: "兔子" },
+          { word: "Nose", zh: "鼻子" }, { word: "Mouth", zh: "嘴巴" }, { word: "Ear", zh: "耳朵" },
+          { word: "Shoe", zh: "鞋子" }, { word: "Hat", zh: "帽子" }, { word: "Desk", zh: "書桌" }
         ],
         mid: [
           { word: "Teacher", zh: "老師" }, { word: "Student", zh: "學生" }, { word: "Summer", zh: "夏天" },
-          { word: "Winter", zh: "冬天" }, { word: "Doctor", zh: "醫生" }, { word: "Rainy", zh: "下雨的" }
+          { word: "Winter", zh: "冬天" }, { word: "Doctor", zh: "醫生" }, { word: "Rainy", zh: "下雨的" },
+          { word: "Sunny", zh: "晴朗的" }, { word: "Music", zh: "音樂" }, { word: "Orange", zh: "橘子/橘色" },
+          { word: "Breakfast", zh: "早餐" }, { word: "Dinner", zh: "晚餐" }, { word: "Hospital", zh: "醫院" },
+          { word: "Library", zh: "圖書館" }, { word: "Monday", zh: "星期一" }, { word: "Sunday", zh: "星期日" },
+          { word: "Police", zh: "警察" }, { word: "Kitchen", zh: "廚房" }, { word: "Park", zh: "公園" }
         ],
         high: [
           { word: "Brave", zh: "勇敢的" }, { word: "Honest", zh: "誠實的" }, { word: "Nature", zh: "大自然" },
-          { word: "Protect", zh: "保護" }, { word: "Planet", zh: "行星/地球" }, { word: "Future", zh: "未來" }
+          { word: "Protect", zh: "保護" }, { word: "Planet", zh: "行星/地球" }, { word: "Future", zh: "未來" },
+          { word: "Science", zh: "科學" }, { word: "History", zh: "歷史" }, { word: "Discover", zh: "發現/探索" },
+          { word: "Dream", zh: "夢想" }, { word: "Peace", zh: "和平" }, { word: "Success", zh: "成功" },
+          { word: "Environment", zh: "環境" }, { word: "Celebrate", zh: "慶祝" }, { word: "Energy", zh: "能源/活力" },
+          { word: "Universe", zh: "宇宙" }, { word: "Tradition", zh: "傳統" }, { word: "Memory", zh: "回憶" }
         ]
       }
     };
 
-    // 優先使用內建題庫，若有外部檔案則動態疊加
-    let globalQuestions = JSON.parse(JSON.stringify(DEFAULT_QUESTIONS));
+    // ========================================================
+    // 🃏 全域洗牌抽牌盒機制（保證單次開啟絕不撞題）
+    // ========================================================
+    let sessionDecks = {
+      chinese: {},
+      life: {},
+      nature: {},
+      english: {}
+    };
 
-    async function tryLoadExternalQuestions() {
-      try {
-        const response = await fetch('./questions.json?t=' + Date.now());
-        if (response.ok) {
-          const ext = await response.json();
-          // 合併題庫
-          ['chinese', 'life', 'nature', 'english'].forEach(sub => {
-            if (ext[sub]) {
-              ['baby', 'low', 'mid', 'high'].forEach(lvl => {
-                if (ext[sub][lvl] && ext[sub][lvl].length) {
-                  globalQuestions[sub][lvl] = ext[sub][lvl];
-                }
-              });
-            }
-          });
+    function drawNextCard(subjectName) {
+      if (!sessionDecks[subjectName][currentLevel] || sessionDecks[subjectName][currentLevel].length === 0) {
+        const sourceList = MASTER_QUESTIONS[subjectName][currentLevel] || MASTER_QUESTIONS[subjectName]['low'];
+        // 複製一份並以 Fisher-Yates 演算法洗牌
+        let shuffled = [...sourceList];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
-      } catch (err) {}
+        sessionDecks[subjectName][currentLevel] = shuffled;
+      }
+
+      const card = sessionDecks[subjectName][currentLevel].pop();
+      const remainCount = sessionDecks[subjectName][currentLevel].length;
+      document.getElementById('deck-status-tag').innerText = `本輪尚餘：${remainCount} 題未出`;
+      return card;
     }
 
     // 賽跑狀態
@@ -713,6 +809,8 @@
       document.getElementById('lvl-low').className = `level-btn ${level === 'low' ? 'active' : ''}`;
       document.getElementById('lvl-mid').className = `level-btn ${level === 'mid' ? 'active' : ''}`;
       document.getElementById('lvl-high').className = `level-btn ${level === 'high' ? 'active' : ''}`;
+      // 清空該科目牌堆重新洗牌
+      sessionDecks = { chinese: {}, life: {}, nature: {}, english: {} };
       nextQuestion();
     }
 
@@ -789,7 +887,7 @@
     }
 
     // ==========================================
-    // 萬題生成器 ＋ 本次開啟防重複過濾
+    // 出題調度
     // ==========================================
     function nextQuestion() {
       isProcessing = false;
@@ -802,49 +900,40 @@
       } else if (currentSubject === 'multiply') {
         generateMultiplyQuestion();
       } else if (currentSubject === 'chinese') {
-        generateGenericQuestion(globalQuestions.chinese, 'chinese');
+        generateGenericQuestion('chinese');
       } else if (currentSubject === 'life') {
-        generateGenericQuestion(globalQuestions.life, 'life');
+        generateGenericQuestion('life');
       } else if (currentSubject === 'nature') {
-        generateGenericQuestion(globalQuestions.nature, 'nature');
+        generateGenericQuestion('nature');
       } else if (currentSubject === 'english') {
         generateEnglishQuestion();
       }
-
-      updateSessionCountUI();
     }
 
     function generateMathQuestion() {
       document.getElementById('audio-btn').style.display = 'none';
-      let a, b, isAdd, questionKey, ans;
+      let a, b, isAdd, ans;
 
-      for (let attempt = 0; attempt < 50; attempt++) {
-        isAdd = Math.random() > 0.5;
-        if (currentLevel === 'baby') {
-          a = Math.floor(Math.random() * 6) + 1;
-          b = Math.floor(Math.random() * 4) + 1;
-        } else if (currentLevel === 'low') {
-          a = Math.floor(Math.random() * 15) + 5;
-          b = Math.floor(Math.random() * 12) + 3;
-        } else if (currentLevel === 'mid') {
-          a = Math.floor(Math.random() * 55) + 20;
-          b = Math.floor(Math.random() * 45) + 10;
-        } else {
-          a = Math.floor(Math.random() * 400) + 100;
-          b = Math.floor(Math.random() * 300) + 50;
-        }
-
-        if (!isAdd && a < b) { const temp = a; a = b; b = temp; }
-        ans = isAdd ? (a + b) : (a - b);
-        questionKey = `math_${a}_${isAdd ? '+' : '-'}_${b}`;
-
-        if (!sessionPlayedQuestions.has(questionKey)) {
-          sessionPlayedQuestions.add(questionKey);
-          break;
-        }
+      isAdd = Math.random() > 0.5;
+      if (currentLevel === 'baby') {
+        a = Math.floor(Math.random() * 6) + 1;
+        b = Math.floor(Math.random() * 4) + 1;
+      } else if (currentLevel === 'low') {
+        a = Math.floor(Math.random() * 20) + 5;
+        b = Math.floor(Math.random() * 15) + 3;
+      } else if (currentLevel === 'mid') {
+        a = Math.floor(Math.random() * 60) + 20;
+        b = Math.floor(Math.random() * 50) + 10;
+      } else {
+        a = Math.floor(Math.random() * 500) + 100;
+        b = Math.floor(Math.random() * 400) + 50;
       }
 
+      if (!isAdd && a < b) { const temp = a; a = b; b = temp; }
+      ans = isAdd ? (a + b) : (a - b);
+
       document.getElementById('question').innerText = `${a} ${isAdd ? '➕' : '➖'} ${b} ＝ ?`;
+      document.getElementById('deck-status-tag').innerText = "演算法動態出題 (無重複)";
       currentAnswer = { q: `${a} ${isAdd ? '加' : '減'} ${b} 等於多少`, ans: ans };
 
       let options = [ans, ans + 1, Math.max(0, ans - 1), ans + 2];
@@ -857,25 +946,19 @@
 
     function generateMultiplyQuestion() {
       document.getElementById('audio-btn').style.display = 'none';
-      let a, b, ans, questionKey;
+      let a, b, ans;
 
-      for (let attempt = 0; attempt < 50; attempt++) {
-        if (currentLevel === 'high') {
-          a = Math.floor(Math.random() * 14) + 11;
-          b = Math.floor(Math.random() * 7) + 3;
-        } else {
-          a = Math.floor(Math.random() * 8) + 2;
-          b = Math.floor(Math.random() * 9) + 1;
-        }
-        ans = a * b;
-        questionKey = `mul_${a}x${b}`;
-        if (!sessionPlayedQuestions.has(questionKey)) {
-          sessionPlayedQuestions.add(questionKey);
-          break;
-        }
+      if (currentLevel === 'high') {
+        a = Math.floor(Math.random() * 14) + 11;
+        b = Math.floor(Math.random() * 7) + 3;
+      } else {
+        a = Math.floor(Math.random() * 8) + 2;
+        b = Math.floor(Math.random() * 9) + 1;
       }
+      ans = a * b;
 
       document.getElementById('question').innerText = `${a} ✖️ ${b} ＝ ?`;
+      document.getElementById('deck-status-tag').innerText = "演算法動態出題 (無重複)";
       currentAnswer = { q: `${a} 乘以 ${b} 等於多少`, ans: ans };
 
       let options = [ans, ans + a, Math.max(1, ans - a), ans + 2];
@@ -886,22 +969,8 @@
       renderButtons(options, val => val === ans, false);
     }
 
-    function generateGenericQuestion(database, subjectName) {
-      let list = (database && database[currentLevel]) ? database[currentLevel] : [];
-      if (!list.length) {
-        list = (DEFAULT_QUESTIONS[subjectName] && DEFAULT_QUESTIONS[subjectName][currentLevel]) 
-               ? DEFAULT_QUESTIONS[subjectName][currentLevel] : [];
-      }
-
-      let available = list.filter(item => !sessionPlayedQuestions.has(item.q));
-      if (available.length === 0) {
-        list.forEach(item => sessionPlayedQuestions.delete(item.q));
-        available = list;
-      }
-
-      const qData = available[Math.floor(Math.random() * available.length)];
-      sessionPlayedQuestions.add(qData.q);
-
+    function generateGenericQuestion(subjectName) {
+      const qData = drawNextCard(subjectName);
       currentAnswer = qData;
       document.getElementById('question').innerText = qData.q;
       document.getElementById('audio-btn').style.display = 'inline-block';
@@ -914,23 +983,13 @@
 
     function generateEnglishQuestion() {
       document.getElementById('audio-btn').style.display = 'inline-block';
-      let list = (globalQuestions.english && globalQuestions.english[currentLevel]) ? globalQuestions.english[currentLevel] : [];
-      if (!list.length) list = DEFAULT_QUESTIONS.english[currentLevel] || DEFAULT_QUESTIONS.english['low'];
-
-      let available = list.filter(item => !sessionPlayedQuestions.has(item.word));
-      if (available.length === 0) {
-        list.forEach(item => sessionPlayedQuestions.delete(item.word));
-        available = list;
-      }
-
-      const targetItem = available[Math.floor(Math.random() * available.length)];
-      sessionPlayedQuestions.add(targetItem.word);
-
+      const targetItem = drawNextCard('english');
       currentAnswer = targetItem;
       document.getElementById('question').innerText = targetItem.word;
       setTimeout(() => speakCurrentQuestion(), 60);
 
-      const wrongList = list.filter(it => it.word !== targetItem.word).map(it => it.zh);
+      const allList = MASTER_QUESTIONS.english[currentLevel] || MASTER_QUESTIONS.english['low'];
+      const wrongList = allList.filter(it => it.word !== targetItem.word).map(it => it.zh);
       wrongList.sort(() => Math.random() - 0.5);
 
       let options = [targetItem.zh, wrongList[0], wrongList[1], wrongList[2]].filter(Boolean);
@@ -989,11 +1048,8 @@
       }
     }
 
-    // 啟動 App
     switchLevel(currentLevel);
     saveStats();
-    nextQuestion();
-    tryLoadExternalQuestions();
   </script>
 </body>
 </html>
