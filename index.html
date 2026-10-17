@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>歡樂學習樂園</title>
+  <title>歡樂學習樂園 - 多人連線版</title>
   
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -114,7 +114,6 @@
       box-shadow: 0 3px 0 #B0533C;
     }
 
-    /* 年級難度切換列 (超醒目樣式) */
     .level-bar {
       width: 100%;
       max-width: 650px;
@@ -151,7 +150,6 @@
       transform: translateY(1px);
     }
 
-    /* 科目導航列 */
     .header-nav {
       width: 100%;
       max-width: 650px;
@@ -337,6 +335,8 @@
       background: white;
       width: 100%;
       max-width: 480px;
+      max-height: 85vh;
+      overflow-y: auto;
       border-radius: 28px;
       padding: 22px;
       box-shadow: 0 15px 35px rgba(0,0,0,0.25);
@@ -350,7 +350,32 @@
       font-size: 1.5rem;
       font-weight: 900;
       color: #264653;
+      margin-bottom: 6px;
+    }
+
+    .online-indicator {
+      font-size: 0.85rem;
+      color: #2ECC71;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 4px;
       margin-bottom: 12px;
+    }
+
+    .online-indicator::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      background: #2ECC71;
+      border-radius: 50%;
+      display: inline-block;
+      animation: blink 1.5s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
     }
 
     .rank-list {
@@ -419,7 +444,7 @@
     </div>
   </div>
 
-  <!-- 年級難度切換列 (低/中/高) -->
+  <!-- 年級難度切換列 -->
   <div class="level-bar">
     <button class="level-btn active" id="lvl-low" onclick="switchLevel('low')">🌱 低年級 (1-2年)</button>
     <button class="level-btn" id="lvl-mid" onclick="switchLevel('mid')">🌿 中年級 (3-4年)</button>
@@ -452,9 +477,12 @@
     <div class="feedback-msg" id="feedback"></div>
   </div>
 
+  <!-- 排行榜與學習統計彈窗 -->
   <div class="modal-overlay" id="rank-modal" onclick="closeLeaderboard()">
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-title">🏆 森林小英雄榮譽榜</div>
+      <div class="online-indicator" id="sync-status">即時雲端連線中...</div>
+      
       <ul class="rank-list" id="rank-list-content"></ul>
 
       <div style="font-weight: 800; color: #2F3E46; width: 100%; margin-bottom: 6px;">📚 學習進度統計</div>
@@ -469,14 +497,100 @@
     </div>
   </div>
 
+  <!-- Firebase 模組載入 -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // 環境變數讀取與備用初始化
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'kids-learning-fun';
+    let db = null;
+    let auth = null;
+    let currentUserId = null;
+    let onlineUsers = [];
+
+    async function setupFirebase() {
+      if (typeof __firebase_config === 'undefined') {
+        document.getElementById('sync-status').innerText = '本機單機版模式（未配置雲端金鑰）';
+        document.getElementById('sync-status').style.color = '#7F8C8D';
+        return;
+      }
+
+      try {
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+
+        // 登入驗證
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+
+        currentUserId = auth.currentUser?.uid || crypto.randomUUID();
+        document.getElementById('sync-status').innerText = '即時多人連線同步中';
+
+        // 監聽公用排行榜資料 (RULE 1: /artifacts/{appId}/public/data/{collectionName})
+        const leaderboardCol = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
+        onSnapshot(leaderboardCol, (snapshot) => {
+          onlineUsers = [];
+          snapshot.forEach((docSnap) => {
+            onlineUsers.push(docSnap.data());
+          });
+          window.renderLeaderboard();
+        }, (err) => {
+          console.error("雲端排行榜同步錯誤:", err);
+          document.getElementById('sync-status').innerText = '連線同步中斷，切換本機模式';
+        });
+
+        // 立即同步目前玩家資料至雲端
+        window.syncScoreToCloud();
+      } catch (err) {
+        console.warn("Firebase 初始化跳過或失敗:", err);
+        document.getElementById('sync-status').innerText = '本機練習模式';
+      }
+    }
+
+    // 暴露全域同步方法
+    window.syncScoreToCloud = async function() {
+      if (!db || !auth || !auth.currentUser) return;
+      try {
+        const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'leaderboard', currentUserId);
+        await setDoc(userDocRef, {
+          userId: currentUserId,
+          name: window.playerName || '小探險家',
+          score: window.score || 0,
+          stats: window.stats || { math: 0, multiply: 0, chinese: 0, english: 0 },
+          updatedAt: Date.now()
+        }, { merge: true });
+      } catch (err) {
+        console.error("更新雲端分數失敗:", err);
+      }
+    };
+
+    window.getOnlineUsers = function() {
+      return onlineUsers;
+    };
+
+    setupFirebase();
+  </script>
+
+  <!-- 應用程式主邏輯 -->
   <script>
     let playerName = localStorage.getItem('kids_player_name') || '小寶貝';
+    window.playerName = playerName;
     document.getElementById('player-name-display').innerText = playerName;
 
     let currentLevel = localStorage.getItem('kids_grade_level') || 'low';
     let currentSubject = 'math';
     let stats = JSON.parse(localStorage.getItem('kids_stats') || '{"math":0,"multiply":0,"chinese":0,"english":0}');
     let score = parseInt(localStorage.getItem('kids_stars') || '0', 10);
+    window.stats = stats;
+    window.score = score;
+
     let combo = 0;
     let currentAnswer = null;
     let isProcessing = false;
@@ -484,15 +598,24 @@
     function saveStats() {
       localStorage.setItem('kids_stats', JSON.stringify(stats));
       localStorage.setItem('kids_stars', score.toString());
+      window.stats = stats;
+      window.score = score;
+      if (window.syncScoreToCloud) {
+        window.syncScoreToCloud();
+      }
     }
 
     function changePlayerName() {
       let newName = prompt('請輸入小探險家的新名字：', playerName);
       if (newName && newName.trim()) {
         playerName = newName.trim();
+        window.playerName = playerName;
         localStorage.setItem('kids_player_name', playerName);
         document.getElementById('player-name-display').innerText = playerName;
         updateRankUI();
+        if (window.syncScoreToCloud) {
+          window.syncScoreToCloud();
+        }
       }
     }
 
@@ -505,18 +628,33 @@
       document.getElementById('rank-modal').style.display = 'none';
     }
 
-    function renderLeaderboard() {
-      let competitors = [
-        { name: "森林守護大龍貓 🌳", score: 80 },
-        { name: "活潑小松鼠 🌰", score: 35 },
-        { name: "森林小鹿 🦌", score: 15 }
-      ];
-      competitors.push({ name: `${playerName} (我)`, score: score, isUser: true });
-      competitors.sort((a, b) => b.score - a.score);
+    window.renderLeaderboard = function() {
+      let cloudUsers = window.getOnlineUsers ? window.getOnlineUsers() : [];
+      let list = [];
+
+      if (cloudUsers && cloudUsers.length > 0) {
+        // 使用真實雲端即時連線玩家
+        list = cloudUsers.map(u => ({
+          name: u.name,
+          score: u.score || 0,
+          isUser: u.name === playerName
+        }));
+      } else {
+        // 預設小精靈對手
+        list = [
+          { name: "森林守護大龍貓 🌳", score: 80, isUser: false },
+          { name: "活潑小松鼠 🌰", score: 35, isUser: false },
+          { name: "森林小鹿 🦌", score: 15, isUser: false },
+          { name: `${playerName} (我)`, score: score, isUser: true }
+        ];
+      }
+
+      // 依分數從高到低排名
+      list.sort((a, b) => b.score - a.score);
 
       const rankListEl = document.getElementById('rank-list-content');
       rankListEl.innerHTML = '';
-      competitors.forEach((item, index) => {
+      list.forEach((item, index) => {
         const li = document.createElement('li');
         li.className = `rank-item ${item.isUser ? 'top-user' : ''}`;
         let medal = index === 0 ? '🥇 第一名' : index === 1 ? '🥈 第二名' : index === 2 ? '🥉 第三名' : `第 ${index + 1} 名`;
@@ -528,7 +666,7 @@
       document.getElementById('stat-multiply').innerText = stats.multiply;
       document.getElementById('stat-chinese').innerText = stats.chinese;
       document.getElementById('stat-eng').innerText = stats.english;
-    }
+    };
 
     // 臺灣 108 課綱：分級國文題庫
     const chineseDB = {
@@ -878,8 +1016,8 @@
         if (options.length === 4) break;
       }
       while (options.length < 4) {
-        let fake = ans + Math.floor(Math.random() * 9) - 4;
-        if (fake > 0 && !options.includes(fake)) options.push(fake);
+        let fake = (Math.floor(Math.random() * 8) + 2) * (Math.floor(Math.random() * 9) + 1);
+        if (!options.includes(fake)) options.push(fake);
       }
       options.sort(() => Math.random() - 0.5);
       renderButtons(options, (val) => val === currentAnswer);
