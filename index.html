@@ -24,7 +24,6 @@
       user-select: none;
       -webkit-user-select: none;
       -webkit-touch-callout: none;
-      /* 開啟硬體加速，大幅改善滑動與點擊卡頓 */
       transform: translateZ(0);
       -webkit-transform: translateZ(0);
     }
@@ -175,7 +174,7 @@
       color: #D97706;
     }
 
-    /* 賽跑精簡跑道 */
+    /* 賽跑跑道 */
     .race-track-container {
       width: 100%;
       background: #E0F2FE;
@@ -211,7 +210,7 @@
     .pony-runner {
       position: absolute;
       left: 2%;
-      font-size: 1.4rem;
+      font-size: 1.35rem;
       transition: left 0.4s ease-out;
       display: flex;
       align-items: center;
@@ -282,10 +281,7 @@
       color: #374151;
     }
 
-    .option-btn:active {
-      background: #EDE9FE;
-    }
-
+    .option-btn:active { background: #EDE9FE; }
     .option-btn.pic-mode { font-size: 2.6rem; }
     .option-btn.correct { background: #D1FAE5; border-color: #10B981; color: #065F46; }
     .option-btn.wrong { background: #FEE2E2; border-color: #EF4444; color: #991B1B; }
@@ -366,7 +362,7 @@
     <button class="nav-btn" id="btn-chinese" onclick="switchSubject('chinese')">🌸 國語</button>
     <button class="nav-btn" id="btn-life" onclick="switchSubject('life')">🍃 生活</button>
     <button class="nav-btn" id="btn-nature" onclick="switchSubject('nature')">🔬 自然</button>
-    <button class="nav-btn" id="btn-eng" onclick="switchSubject('english')">🔤 英文</button>
+    <button class="nav-btn" id="btn-english" onclick="switchSubject('english')">🔤 英文</button>
     <button class="nav-btn race-mode-btn" id="btn-race" onclick="startRaceMode()">🏇 賽跑</button>
   </div>
 
@@ -436,7 +432,8 @@
       raceQuestionIndex = 0;
       ponyPositions = [2, 2, 2, 2, 2];
       
-      ['math', 'multiply', 'chinese', 'life', 'nature', 'eng'].forEach(s => {
+      const navIds = ['math', 'multiply', 'chinese', 'life', 'nature', 'english'];
+      navIds.forEach(s => {
         const btn = document.getElementById('btn-' + s);
         if (btn) btn.className = 'nav-btn';
       });
@@ -576,30 +573,38 @@
         { q: "「 ㄍ 」是什麼？", voice: "請找出 ㄍ 的東西", ans: "🐶", options: ["🐶", "🍎", "🐱", "⭐"] },
         { q: "「 ㄑ 」是什麼？", voice: "請找出 ㄑ 的東西", ans: "🚗", options: ["🚗", "🐟", "🐱", "🍉"] },
         { q: "「 ㄇ 」是什麼？", voice: "請找出 ㄇ 的東西", ans: "🐱", options: ["🐱", "🐶", "🍌", "🚗"] },
-        { q: "「 ㄩˊ 」是什麼？", voice: "請找出 ㄩˊ 的東西", ans: "🐟", options: ["🐟", "🍎", "🚗", "🍉"] }
+        { q: "「 ㄩˊ 」是什麼？", voice: "請找出 ㄩˊ 的東西", ans: "🐟", options: ["🐟", "🍎", "🚗", "🍉"] },
+        { q: "「 ㄒ 」是什麼？", voice: "請找出 ㄒ 的東西", ans: "🍉", options: ["🍉", "🐶", "🍎", "🐱"] },
+        { q: "「 ㄅ 」是什麼？", voice: "請找出 ㄅ 的東西", ans: "🍌", options: ["🍌", "🐱", "🐶", "🚗"] },
+        { q: "「 ㄧㄤˊ 」是什麼？", voice: "請找出 ㄧㄤˊ 的東西", ans: "🐑", options: ["🐑", "🐶", "🐟", "🍎"] }
       ],
       low: [
         { q: "「河」的部首是什麼？", ans: "氵(水)", options: ["氵(水)", "木", "口", "日"] },
         { q: "「草」的部首是什麼？", ans: "艹(草)", options: ["艹(草)", "木", "日", "十"] },
         { q: "一（ ）花朵", ans: "朵", options: ["朵", "頭", "張", "隻"] },
         { q: "一（ ）小狗", ans: "隻", options: ["隻", "朵", "條", "本"] },
-        { q: "一（ ）汽車", ans: "輛", options: ["輛", "本", "片", "把"] }
+        { q: "一（ ）汽車", ans: "輛", options: ["輛", "本", "片", "把"] },
+        { q: "「白」的相反詞是？", ans: "黑", options: ["黑", "紅", "亮", "高"] },
+        { q: "「木」加「木」是？", ans: "林", options: ["林", "森", "本", "休"] }
       ],
       mid: [
         { q: "「守株待（ ）」填入動物名？", ans: "兔", options: ["兔", "牛", "羊", "鳥"] },
         { q: "「畫（ ）點睛」填入動物名？", ans: "龍", options: ["龍", "蛇", "馬", "虎"] },
-        { q: "銀「行」的「行」讀音是？", ans: "ㄏㄤˊ", options: ["ㄏㄤˊ", "ㄒㄧㄥˊ", "ㄒㄧㄥˋ", "ㄏㄤˋ"] }
+        { q: "銀「行」的「行」讀音是？", ans: "ㄏㄤˊ", options: ["ㄏㄤˊ", "ㄒㄧㄥˊ", "ㄒㄧㄥˋ", "ㄏㄤˋ"] },
+        { q: "一（ ）宏偉的橋梁", ans: "座", options: ["座", "面", "條", "架"] }
       ],
       high: [
         { q: "「破釜沉舟」代表什麼意思？", ans: "下定決心不留退路", options: ["下定決心不留退路", "打破飯鍋浪費糧食", "乘坐沉沒的船隻", "做事猶豫不決"] },
-        { q: "「出類拔（ ）」形容超越同類？", ans: "萃", options: ["萃", "翠", "碎", "粹"] }
+        { q: "「出類拔（ ）」形容超越同類？", ans: "萃", options: ["萃", "翠", "碎", "粹"] },
+        { q: "「塞翁失馬，焉知非（ ）」？", ans: "福", options: ["福", "禍", "利", "吉"] }
       ]
     };
 
     const lifeDB = {
       baby: [
         { q: "看見紅燈應該怎麼做？", voice: "紅燈要怎麼辦呢", ans: "🛑 停下來", options: ["🛑 停下來", "🏃 快跑", "🙈 閉眼", "💃 跳舞"] },
-        { q: "吃東西之前要先做什麼？", voice: "吃東西前要先洗手喔", ans: "🧼 用肥皂洗手", options: ["🧼 用肥皂洗手", "直接拿來吃", "擦在褲子上", "不用洗"] }
+        { q: "吃東西之前要先做什麼？", voice: "吃東西前要先洗手喔", ans: "🧼 用肥皂洗手", options: ["🧼 用肥皂洗手", "直接拿來吃", "擦在褲子上", "不用洗"] },
+        { q: "不小心撞到別人要說什麼？", voice: "撞到人要說什麼呢", ans: "對不起", options: ["對不起", "謝謝你", "沒關係", "恭喜"] }
       ],
       low: [
         { q: "香蕉皮屬於哪一種垃圾？", ans: "廚餘", options: ["廚餘", "一般垃圾", "塑膠回收", "紙類回收"] },
@@ -619,7 +624,8 @@
         { q: "白天在天空上發光的是？", voice: "白天天上發光的是誰呢", ans: "☀️ 太陽", options: ["☀️ 太陽", "🌙 月亮", "⭐ 星星", "💡 路燈"] }
       ],
       low: [
-        { q: "昆蟲通常有幾隻腳？", ans: "6隻", options: ["6隻", "8隻", "4隻", "10隻"] }
+        { q: "昆蟲通常有幾隻腳？", ans: "6隻", options: ["6隻", "8隻", "4隻", "10隻"] },
+        { q: "植物製造養分主要依賴什麼作用？", ans: "光合作用", options: ["光合作用", "呼吸作用", "消化作用", "蒸發作用"] }
       ],
       mid: [
         { q: "月亮每個月圓缺一次的週期約為？", ans: "約30天(一個月)", options: ["約30天(一個月)", "約7天", "約100天", "約365天"] }
@@ -631,16 +637,23 @@
 
     const englishDB = {
       baby: [
-        { word: "Cat", zh: "🐱 貓咪" }, { word: "Dog", zh: "🐶 狗狗" }, { word: "Apple", zh: "🍎 蘋果" }
+        { word: "Cat", zh: "🐱 貓咪" }, { word: "Dog", zh: "🐶 狗狗" }, { word: "Apple", zh: "🍎 蘋果" },
+        { word: "Egg", zh: "🥚 雞蛋" }, { word: "Duck", zh: "🦆 鴨子" }, { word: "Sun", zh: "☀️ 太陽" },
+        { word: "Fish", zh: "🐟 小魚" }, { word: "Car", zh: "🚗 汽車" }, { word: "Star", zh: "⭐ 星星" }
       ],
       low: [
-        { word: "Book", zh: "書本" }, { word: "Star", zh: "星星" }, { word: "Fish", zh: "小魚" }
+        { word: "Book", zh: "書本" }, { word: "Star", zh: "星星" }, { word: "Fish", zh: "小魚" },
+        { word: "Bird", zh: "小鳥" }, { word: "Car", zh: "汽車" }, { word: "Milk", zh: "牛奶" },
+        { word: "Hand", zh: "手" }, { word: "Eye", zh: "眼睛" }, { word: "Tree", zh: "大樹" }
       ],
       mid: [
-        { word: "Teacher", zh: "老師" }, { word: "Student", zh: "學生" }, { word: "School", zh: "學校" }
+        { word: "Teacher", zh: "老師" }, { word: "Student", zh: "學生" }, { word: "School", zh: "學校" },
+        { word: "Summer", zh: "夏天" }, { word: "Doctor", zh: "醫生" }, { word: "Rainy", zh: "下雨的" },
+        { word: "Friend", zh: "朋友" }, { word: "Family", zh: "家庭" }, { word: "Water", zh: "水" }
       ],
       high: [
-        { word: "Brave", zh: "勇敢的" }, { word: "Honest", zh: "誠實的" }, { word: "Nature", zh: "大自然" }
+        { word: "Brave", zh: "勇敢的" }, { word: "Honest", zh: "誠實的" }, { word: "Nature", zh: "大自然" },
+        { word: "Protect", zh: "保護" }, { word: "Planet", zh: "行星/地球" }, { word: "Future", zh: "未來" }
       ]
     };
 
@@ -659,36 +672,41 @@
       isRaceMode = false;
       document.getElementById('race-track').style.display = 'none';
       currentSubject = subject;
-      ['math', 'multiply', 'chinese', 'life', 'nature', 'eng'].forEach(s => {
+      const navIds = ['math', 'multiply', 'chinese', 'life', 'nature', 'english'];
+      navIds.forEach(s => {
         const btn = document.getElementById('btn-' + s);
-        if (btn) btn.className = `nav-btn ${(subject === s || (subject === 'english' && s === 'eng')) ? 'active' : ''}`;
+        if (btn) btn.className = `nav-btn ${subject === s ? 'active' : ''}`;
       });
       document.getElementById('btn-race').className = 'nav-btn race-mode-btn';
       nextQuestion();
     }
 
+    // 👉 關鍵優化：把括號自動唸成「什麼」
     function speakCurrentQuestion() {
       ensureAudioResumed();
       if (!('speechSynthesis' in window)) return;
-      window.speechSynthesis.cancel();
-      if (currentSubject === 'english' && currentAnswer) {
-        const u = new SpeechSynthesisUtterance(currentAnswer.word);
-        u.lang = 'en-US';
-        u.rate = 0.8;
-        window.speechSynthesis.speak(u);
-      } else if (currentAnswer) {
-        const txt = currentAnswer.voice || currentAnswer.q.replace('\n', '，');
-        const u = new SpeechSynthesisUtterance(txt);
-        u.lang = 'zh-TW';
-        u.rate = 0.85;
-        window.speechSynthesis.speak(u);
-      }
+      try {
+        window.speechSynthesis.cancel();
+        if (currentSubject === 'english' && currentAnswer) {
+          const u = new SpeechSynthesisUtterance(currentAnswer.word);
+          u.lang = 'en-US';
+          u.rate = 0.8;
+          window.speechSynthesis.speak(u);
+        } else if (currentAnswer) {
+          let txt = currentAnswer.voice || currentAnswer.q;
+          txt = txt.replace(/（\s*）|\(\s*\)/g, '什麼')
+                   .replace('\n', '，');
+
+          const u = new SpeechSynthesisUtterance(txt);
+          u.lang = 'zh-TW';
+          u.rate = 0.85;
+          window.speechSynthesis.speak(u);
+        }
+      } catch (e) {}
     }
 
-    // 音樂控制
     let audioCtx = null;
     let isBgmPlaying = false;
-    let bgmTimer = null;
 
     function getAudioContext() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -696,23 +714,18 @@
     }
 
     function ensureAudioResumed() {
-      const ctx = getAudioContext();
-      if (ctx.state === 'suspended') ctx.resume();
+      try {
+        const ctx = getAudioContext();
+        if (ctx.state === 'suspended') ctx.resume();
+      } catch(e) {}
     }
 
     function toggleBGM() {
       ensureAudioResumed();
       const btn = document.getElementById('bgm-btn');
-      if (isBgmPlaying) {
-        isBgmPlaying = false;
-        if (bgmTimer) clearTimeout(bgmTimer);
-        btn.innerText = '🎵 龍貓音樂: 關閉';
-        btn.classList.remove('playing');
-      } else {
-        isBgmPlaying = true;
-        btn.innerText = '🎵 龍貓音樂: 播放中';
-        btn.classList.add('playing');
-      }
+      isBgmPlaying = !isBgmPlaying;
+      btn.innerText = isBgmPlaying ? '🎵 音樂: 播放中' : '🎵 龍貓音樂: 關閉';
+      btn.className = isBgmPlaying ? 'action-btn playing' : 'action-btn';
     }
 
     // 出題邏輯
@@ -727,7 +740,7 @@
       else if (currentSubject === 'chinese') generateGenericQuestion(chineseDB, 'chinese');
       else if (currentSubject === 'life') generateGenericQuestion(lifeDB, 'life');
       else if (currentSubject === 'nature') generateGenericQuestion(natureDB, 'nature');
-      else generateEnglishQuestion();
+      else if (currentSubject === 'english') generateEnglishQuestion();
     }
 
     function generateMathQuestion() {
@@ -738,11 +751,7 @@
       document.getElementById('question').innerText = `${a} ➕ ${b} ＝ ?`;
       currentAnswer = ans;
 
-      let options = [ans];
-      while (options.length < 4) {
-        let fake = ans + Math.floor(Math.random() * 7) - 3;
-        if (fake >= 0 && !options.includes(fake)) options.push(fake);
-      }
+      let options = [ans, ans + 1, ans - 1 >= 0 ? ans - 1 : ans + 2, ans + 3];
       options.sort(() => Math.random() - 0.5);
       renderButtons(options, val => val === currentAnswer, false);
     }
@@ -755,11 +764,7 @@
       document.getElementById('question').innerText = `${a} ✖️ ${b} ＝ ?`;
       currentAnswer = ans;
 
-      let options = [ans];
-      while (options.length < 4) {
-        let fake = ans + Math.floor(Math.random() * 9) - 4;
-        if (fake > 0 && !options.includes(fake)) options.push(fake);
-      }
+      let options = [ans, ans + a, ans - a > 0 ? ans - a : ans + 2, ans + 1];
       options.sort(() => Math.random() - 0.5);
       renderButtons(options, val => val === currentAnswer, false);
     }
@@ -770,7 +775,7 @@
       currentAnswer = qData;
       document.getElementById('question').innerText = qData.q;
       document.getElementById('audio-btn').style.display = 'inline-block';
-      setTimeout(() => speakCurrentQuestion(), 150);
+      setTimeout(() => speakCurrentQuestion(), 100);
 
       const isBabyPic = (currentLevel === 'baby' && subjectName === 'chinese');
       const options = [...qData.options].sort(() => Math.random() - 0.5);
@@ -780,15 +785,16 @@
     function generateEnglishQuestion() {
       document.getElementById('audio-btn').style.display = 'inline-block';
       const list = englishDB[currentLevel] || englishDB['low'];
-      const item = list[Math.floor(Math.random() * list.length)];
+      const targetIndex = Math.floor(Math.random() * list.length);
+      const item = list[targetIndex];
       currentAnswer = item;
       document.getElementById('question').innerText = item.word;
-      setTimeout(() => speakCurrentQuestion(), 150);
+      setTimeout(() => speakCurrentQuestion(), 100);
 
+      const others = list.filter((_, idx) => idx !== targetIndex).sort(() => Math.random() - 0.5);
       let options = [item.zh];
-      while (options.length < 4) {
-        let fake = list[Math.floor(Math.random() * list.length)].zh;
-        if (!options.includes(fake)) options.push(fake);
+      for (let i = 0; i < others.length && options.length < 4; i++) {
+        options.push(others[i].zh);
       }
       options.sort(() => Math.random() - 0.5);
       renderButtons(options, val => val === currentAnswer.zh, false);
