@@ -51,14 +51,13 @@
       z-index: -1;
     }
 
-    /* 頂部導航與功能條 */
     .header-bar {
       width: 100%;
       max-width: 650px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       background: rgba(255, 255, 255, 0.92);
       padding: 6px 14px;
       border-radius: 50px;
@@ -98,7 +97,8 @@
       box-shadow: 0 3px 0 #52796F;
       display: flex;
       align-items: center;
-      gap: 3px;
+      gap: 4px;
+      touch-action: manipulation;
     }
 
     .action-btn.gold {
@@ -111,6 +111,41 @@
       box-shadow: 0 3px 0 #B0533C;
     }
 
+    /* 年級難度選擇條 */
+    .level-bar {
+      width: 100%;
+      max-width: 650px;
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      background: rgba(255, 255, 255, 0.85);
+      padding: 5px;
+      border-radius: 24px;
+      border: 2px solid #CAD2C5;
+    }
+
+    .level-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 6px 8px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: #52796F;
+      border-radius: 18px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+    }
+
+    .level-btn.active {
+      background: #52796F;
+      color: white;
+      box-shadow: 0 3px 0 #354F52;
+    }
+
+    /* 科目導航列 */
     .header-nav {
       width: 100%;
       max-width: 650px;
@@ -132,6 +167,7 @@
       box-shadow: 0 4px 0 #BCC8B6;
       transition: all 0.1s ease;
       text-align: center;
+      touch-action: manipulation;
     }
 
     .nav-btn.active {
@@ -204,11 +240,11 @@
     }
 
     .question-title {
-      font-size: 2.4rem;
+      font-size: 2.2rem;
       font-weight: 900;
       color: #264653;
       margin: 0;
-      line-height: 1.3;
+      line-height: 1.35;
       word-break: break-word;
     }
 
@@ -223,6 +259,7 @@
       margin-top: 10px;
       cursor: pointer;
       box-shadow: 0 4px 0 #B3D8D3;
+      touch-action: manipulation;
     }
 
     .options-grid {
@@ -235,7 +272,7 @@
 
     .option-btn {
       min-height: 90px;
-      font-size: 1.65rem;
+      font-size: 1.55rem;
       font-weight: 800;
       border: 3px solid #E2E8DC;
       border-radius: 24px;
@@ -246,7 +283,9 @@
       justify-content: center;
       align-items: center;
       box-shadow: 0 7px 0 #C9D5C4;
-      padding: 8px;
+      padding: 8px 12px;
+      touch-action: manipulation;
+      text-align: center;
     }
 
     .option-btn:active {
@@ -276,7 +315,7 @@
       justify-content: center;
     }
 
-    /* 排行榜彈窗 (Modal) */
+    /* 榮譽榜彈窗 */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -361,9 +400,8 @@
     }
   </style>
 </head>
-<body onclick="tryAutoPlayBGM()">
+<body onclick="ensureAudioResumed()">
 
-  <!-- 頂部資訊列 -->
   <div class="header-bar">
     <div class="user-profile" onclick="event.stopPropagation(); changePlayerName()">
       <span>🎒 <span id="player-name-display">小探險家</span> ✏️</span>
@@ -371,8 +409,15 @@
     
     <div class="top-action-btns">
       <button class="action-btn gold" onclick="event.stopPropagation(); openLeaderboard()">🏆 榮譽榜</button>
-      <button class="action-btn" id="bgm-btn" onclick="event.stopPropagation(); toggleBGM()">🎵 音樂: 關閉</button>
+      <button class="action-btn" id="bgm-btn" onclick="event.stopPropagation(); toggleBGM()">🎵 龍貓音樂: 關閉</button>
     </div>
+  </div>
+
+  <!-- 年級難度切換列 -->
+  <div class="level-bar">
+    <button class="level-btn active" id="lvl-low" onclick="switchLevel('low')">🌱 低年級 (1-2年)</button>
+    <button class="level-btn" id="lvl-mid" onclick="switchLevel('mid')">🌿 中年級 (3-4年)</button>
+    <button class="level-btn" id="lvl-high" onclick="switchLevel('high')">🌳 高年級 (5-6年)</button>
   </div>
 
   <!-- 科目切換 -->
@@ -383,7 +428,6 @@
     <button class="nav-btn" id="btn-eng" onclick="switchSubject('english')">🔤 英文</button>
   </div>
 
-  <!-- 主卡片 -->
   <div class="card" id="main-card">
     <div class="score-container">
       <div class="score-board">⭐ 橡果星星: <span id="score">0</span></div>
@@ -402,11 +446,9 @@
     <div class="feedback-msg" id="feedback"></div>
   </div>
 
-  <!-- 排行榜與學習統計彈窗 -->
   <div class="modal-overlay" id="rank-modal" onclick="closeLeaderboard()">
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-title">🏆 森林小英雄榮譽榜</div>
-      
       <ul class="rank-list" id="rank-list-content"></ul>
 
       <div style="font-weight: 800; color: #2F3E46; width: 100%; margin-bottom: 6px;">📚 學習進度統計</div>
@@ -422,14 +464,14 @@
   </div>
 
   <script>
-    // --- 暱稱與本地統計儲存 (localStorage) ---
+    // --- 玩家設定與存檔 ---
     let playerName = localStorage.getItem('kids_player_name') || '小寶貝';
     document.getElementById('player-name-display').innerText = playerName;
 
-    // 分科進度累計
+    let currentLevel = localStorage.getItem('kids_grade_level') || 'low'; // low, mid, high
+    let currentSubject = 'math';
     let stats = JSON.parse(localStorage.getItem('kids_stats') || '{"math":0,"multiply":0,"chinese":0,"english":0}');
     let score = parseInt(localStorage.getItem('kids_stars') || '0', 10);
-    let currentSubject = 'math';
     let combo = 0;
     let currentAnswer = null;
     let isProcessing = false;
@@ -449,7 +491,6 @@
       }
     }
 
-    // --- 榮譽榜視窗控制 ---
     function openLeaderboard() {
       renderLeaderboard();
       document.getElementById('rank-modal').style.display = 'flex';
@@ -460,83 +501,154 @@
     }
 
     function renderLeaderboard() {
-      // 內建森林小動物對手，玩家根據自己的星星分數即時競爭
       let competitors = [
         { name: "森林守護大龍貓 🌳", score: 80 },
         { name: "活潑小松鼠 🌰", score: 35 },
         { name: "森林小鹿 🦌", score: 15 }
       ];
-
-      // 加入玩家自己
       competitors.push({ name: `${playerName} (我)`, score: score, isUser: true });
       competitors.sort((a, b) => b.score - a.score);
 
       const rankListEl = document.getElementById('rank-list-content');
       rankListEl.innerHTML = '';
-
       competitors.forEach((item, index) => {
         const li = document.createElement('li');
         li.className = `rank-item ${item.isUser ? 'top-user' : ''}`;
-        
-        let medal = '🎖️';
-        if (index === 0) medal = '🥇 第一名';
-        else if (index === 1) medal = '🥈 第二名';
-        else if (index === 2) medal = '🥉 第三名';
-        else medal = `第 ${index + 1} 名`;
-
+        let medal = index === 0 ? '🥇 第一名' : index === 1 ? '🥈 第二名' : index === 2 ? '🥉 第三名' : `第 ${index + 1} 名`;
         li.innerHTML = `<span>${medal} ${item.name}</span><span>⭐ ${item.score}</span>`;
         rankListEl.appendChild(li);
       });
 
-      // 更新分科數據
       document.getElementById('stat-math').innerText = stats.math;
       document.getElementById('stat-multiply').innerText = stats.multiply;
       document.getElementById('stat-chinese').innerText = stats.chinese;
       document.getElementById('stat-eng').innerText = stats.english;
     }
 
-    // --- 題庫 ---
-    const allChineseQuestions = [
-      { q: "「河」的部首是什麼？", ans: "氵(水)", options: ["氵(水)", "木", "口", "日"] },
-      { q: "「草」的部首是什麼？", ans: "艹(草)", options: ["艹(草)", "木", "日", "十"] },
-      { q: "「花朵」的量詞要填什麼？\n一（ ）花", ans: "朵", options: ["朵", "頭", "張", "隻"] },
-      { q: "「小狗」的量詞要填什麼？\n一（ ）狗", ans: "隻", options: ["隻", "朵", "條", "本"] },
-      { q: "「小汽車」的量詞是？\n一（ ）車", ans: "輛", options: ["輛", "本", "片", "把"] },
-      { q: "「故事書」的量詞是？\n一（ ）書", ans: "本", options: ["本", "件", "杯", "包"] },
-      { q: "「雨傘」的量詞要用？\n一（ ）傘", ans: "把", options: ["把", "隻", "朵", "頭"] },
-      { q: "「鉛筆」的量詞要用？\n一（ ）筆", ans: "枝", options: ["枝", "張", "片", "顆"] },
-      { q: "「白」的相反詞是？", ans: "黑", options: ["黑", "紅", "亮", "高"] },
-      { q: "「大」的相反詞是？", ans: "小", options: ["小", "少", "矮", "多"] },
-      { q: "「多」的相反詞是？", ans: "少", options: ["少", "小", "短", "低"] },
-      { q: "「高」的相反詞是？", ans: "矮", options: ["矮", "小", "瘦", "慢"] },
-      { q: "「快」的相反詞是？", ans: "慢", options: ["慢", "短", "低", "矮"] },
-      { q: "「長」的相反詞是？", ans: "短", options: ["短", "小", "低", "冷"] },
-      { q: "「木」加「木」會變成什麼字？", ans: "林", options: ["林", "森", "本", "休"] },
-      { q: "「日」加「月」會變成什麼字？", ans: "明", options: ["明", "晴", "早", "暗"] },
-      { q: "「貓」的注音開頭是？", ans: "ㄇ", options: ["ㄇ", "ㄋ", "ㄈ", "ㄆ"] },
-      { q: "「魚」的注音符號是？", ans: "ㄩˊ", options: ["ㄩˊ", "ㄧˊ", "ㄨˊ", "ㄚˊ"] },
-      { q: "「森」字裡面共有幾個「木」？", ans: "3個", options: ["3個", "2個", "4個", "1個"] }
-    ];
+    // ==========================================
+    // 臺灣 108 課綱：分級國文題庫
+    // ==========================================
+    const chineseDB = {
+      low: [
+        { q: "「河」的部首是什麼？", ans: "氵(水)", options: ["氵(水)", "木", "口", "日"] },
+        { q: "「草」的部首是什麼？", ans: "艹(草)", options: ["艹(草)", "木", "日", "十"] },
+        { q: "一（ ）花", ans: "朵", options: ["朵", "頭", "張", "隻"] },
+        { q: "一（ ）小狗", ans: "隻", options: ["隻", "朵", "條", "本"] },
+        { q: "一（ ）汽車", ans: "輛", options: ["輛", "本", "片", "把"] },
+        { q: "一（ ）鉛筆", ans: "枝", options: ["枝", "張", "片", "顆"] },
+        { q: "一（ ）雨傘", ans: "把", options: ["把", "隻", "朵", "頭"] },
+        { q: "「白」的相反詞是？", ans: "黑", options: ["黑", "紅", "亮", "高"] },
+        { q: "「大」的相反詞是？", ans: "小", options: ["小", "少", "矮", "多"] },
+        { q: "「高」的相反詞是？", ans: "矮", options: ["矮", "小", "瘦", "慢"] },
+        { q: "「快」的相反詞是？", ans: "慢", options: ["慢", "短", "低", "矮"] },
+        { q: "「長」的相反詞是？", ans: "短", options: ["短", "小", "低", "冷"] },
+        { q: "「日」加「月」是？", ans: "明", options: ["明", "晴", "早", "暗"] },
+        { q: "「木」加「木」是？", ans: "林", options: ["林", "森", "本", "休"] },
+        { q: "「魚」的注音符號是？", ans: "ㄩˊ", options: ["ㄩˊ", "ㄧˊ", "ㄨˊ", "ㄚˊ"] },
+        { q: "「貓」的注音開頭是？", ans: "ㄇ", options: ["ㄇ", "ㄋ", "ㄈ", "ㄆ"] },
+        { q: "「風」的注音是？", ans: "ㄈㄥ", options: ["ㄈㄥ", "ㄏㄥ", "ㄉㄥ", "ㄅㄥ"] },
+        { q: "「森」裡面有幾個木？", ans: "3個", options: ["3個", "2個", "4個", "1個"] }
+      ],
+      mid: [
+        { q: "「守株待（ ）」填入動物名？", ans: "兔", options: ["兔", "牛", "羊", "鳥"] },
+        { q: "「畫（ ）點睛」填入動物名？", ans: "龍", options: ["龍", "蛇", "馬", "虎"] },
+        { q: "「一石二（ ）」填入哪一字？", ans: "鳥", options: ["鳥", "魚", "兔", "狗"] },
+        { q: "「亡羊補（ ）」代表及時補救？", ans: "牢", options: ["牢", "屋", "門", "牆"] },
+        { q: "「落」落大方的讀音是？", ans: "ㄌㄨㄛˋ", options: ["ㄌㄨㄛˋ", "ㄌㄚˋ", "ㄌㄠˋ", "ㄌㄜˋ"] },
+        { q: "銀「行」的「行」讀音是？", ans: "ㄏㄤˊ", options: ["ㄏㄤˊ", "ㄒㄧㄥˊ", "ㄒㄧㄥˋ", "ㄏㄤˋ"] },
+        { q: "形容「水流很急」的成語？", ans: "波濤洶湧", options: ["波濤洶湧", "心平氣和", "微風徐徐", "井井有條"] },
+        { q: "形容「很有禮貌、守秩序」？", ans: "彬彬有禮", options: ["彬彬有禮", "粗枝大葉", "亂七八糟", "毛手毛腳"] },
+        { q: "一（ ）宏偉的橋梁", ans: "座", options: ["座", "面", "條", "架"] },
+        { q: "一（ ）精彩的電影", ans: "部", options: ["部", "件", "首", "副"] },
+        { q: "「月亮像個大銀盤」使用了什麼修辭？", ans: "譬喻(比喻)", options: ["譬喻(比喻)", "擬人", "排比", "誇飾"] },
+        { q: "「花兒在風中跳舞」使用了什麼修辭？", ans: "擬人", options: ["擬人", "譬喻", "對偶", "倒反"] }
+      ],
+      high: [
+        { q: "「破釜沉舟」代表什麼意思？", ans: "下定決心不留退路", options: ["下定決心不留退路", "打破飯鍋浪費糧食", "乘坐沉沒的船隻", "做事猶豫不決"] },
+        { q: "「臥薪嘗膽」與哪位歷史人物有關？", ans: "勾踐", options: ["勾踐", "項羽", "劉備", "諸葛亮"] },
+        { q: "「三顧茅廬」比喻真心誠意邀請？", ans: "諸葛亮", options: ["諸葛亮", "周瑜", "曹操", "孫權"] },
+        { q: "「出類拔（ ）」形容超越同類？", ans: "萃", options: ["萃", "翠", "碎", "粹"] },
+        { q: "「（ ）然開朗」填入正確國字？", ans: "豁", options: ["豁", "豁", "闊", "和"] },
+        { q: "「塞翁失馬，焉知非（ ）」？", ans: "福", options: ["福", "禍", "利", "吉"] },
+        { q: "（ ）困難再大，我們（ ）要克服。", ans: "即使...也...", options: ["即使...也...", "因為...所以...", "雖然...但是...", "不但...而且..."] },
+        { q: "「迫不及待」中的「待」意思是？", ans: "等待", options: ["等待", "招待", "待遇", "對待"] },
+        { q: "形容文章結構完整、毫無破綻？", ans: "天衣無縫", options: ["天衣無縫", "畫蛇添足", "斷章取義", "漏洞百出"] },
+        { q: "「不入虎穴，焉得虎（ ）」？", ans: "子", options: ["子", "肉", "皮", "膽"] }
+      ]
+    };
 
-    const allEnglishWords = [
-      { word: "Cat", zh: "貓咪" }, { word: "Dog", zh: "狗狗" }, { word: "Apple", zh: "蘋果" },
-      { word: "Book", zh: "書本" }, { word: "Red", zh: "紅色" }, { word: "Blue", zh: "藍色" },
-      { word: "Star", zh: "星星" }, { word: "Fish", zh: "小魚" }, { word: "Bird", zh: "小鳥" },
-      { word: "Car", zh: "汽車" }, { word: "Sun", zh: "太陽" }, { word: "Moon", zh: "月亮" },
-      { word: "Tree", zh: "大樹" }, { word: "Water", zh: "水" }, { word: "Milk", zh: "牛奶" },
-      { word: "Egg", zh: "雞蛋" }, { word: "Banana", zh: "香蕉" }, { word: "Rabbit", zh: "兔子" }
-    ];
+    // ==========================================
+    // 臺灣 108 課綱：分級英語單字庫
+    // ==========================================
+    const englishDB = {
+      low: [
+        { word: "Cat", zh: "貓咪" }, { word: "Dog", zh: "狗狗" }, { word: "Apple", zh: "蘋果" },
+        { word: "Book", zh: "書本" }, { word: "Red", zh: "紅色" }, { word: "Blue", zh: "藍色" },
+        { word: "Star", zh: "星星" }, { word: "Fish", zh: "小魚" }, { word: "Bird", zh: "小鳥" },
+        { word: "Car", zh: "汽車" }, { word: "Sun", zh: "太陽" }, { word: "Moon", zh: "月亮" },
+        { word: "Tree", zh: "大樹" }, { word: "Milk", zh: "牛奶" }, { word: "Egg", zh: "雞蛋" },
+        { word: "Hand", zh: "手" }, { word: "Eye", zh: "眼睛" }, { word: "Nose", zh: "鼻子" }
+      ],
+      mid: [
+        { word: "Teacher", zh: "老師" }, { word: "Student", zh: "學生" }, { word: "School", zh: "學校" },
+        { word: "Friend", zh: "朋友" }, { word: "Family", zh: "家庭" }, { word: "Yellow", zh: "黃色" },
+        { word: "Orange", zh: "柳橙/橘色" }, { word: "Water", zh: "水" }, { word: "Music", zh: "音樂" },
+        { word: "Play", zh: "玩耍/演奏" }, { word: "Run", zh: "跑步" }, { word: "Jump", zh: "跳躍" },
+        { word: "Summer", zh: "夏天" }, { word: "Winter", zh: "冬天" }, { word: "Rainy", zh: "下雨的" },
+        { word: "Sunny", zh: "晴朗的" }, { word: "Monday", zh: "星期一" }, { word: "Sunday", zh: "星期日" }
+      ],
+      high: [
+        { word: "Brave", zh: "勇敢的" }, { word: "Honest", zh: "誠實的" }, { word: "Nature", zh: "大自然" },
+        { word: "Future", zh: "未來" }, { word: "Science", zh: "科學" }, { word: "History", zh: "歷史" },
+        { word: "Planet", zh: "行星/地球" }, { word: "Energy", zh: "能源/活力" }, { word: "Doctor", zh: "醫生" },
+        { word: "Police", zh: "警察" }, { word: "Protect", zh: "保護" }, { word: "Discover", zh: "發現/探索" },
+        { word: "Dream", zh: "夢想" }, { word: "Memory", zh: "回憶/記憶" }, { word: "Peace", zh: "和平" },
+        { word: "Success", zh: "成功" }, { word: "Travel", zh: "旅行" }, { word: "Imagine", zh: "想像" }
+      ]
+    };
 
-    let remainingEnglish = [];
-    function getNextEnglish() {
-      if (remainingEnglish.length === 0) remainingEnglish = [...allEnglishWords].sort(() => Math.random() - 0.5);
-      return remainingEnglish.pop();
+    // 零重複抽牌箱管理 (Shuffle Bags)
+    let bags = {
+      chinese: { low: [], mid: [], high: [] },
+      english: { low: [], mid: [], high: [] }
+    };
+
+    function getNextChineseItem() {
+      let pool = bags.chinese[currentLevel];
+      if (!pool || pool.length === 0) {
+        bags.chinese[currentLevel] = [...chineseDB[currentLevel]].sort(() => Math.random() - 0.5);
+      }
+      return bags.chinese[currentLevel].pop();
     }
 
-    let remainingChinese = [];
-    function getNextChinese() {
-      if (remainingChinese.length === 0) remainingChinese = [...allChineseQuestions].sort(() => Math.random() - 0.5);
-      return remainingChinese.pop();
+    function getNextEnglishItem() {
+      let pool = bags.english[currentLevel];
+      if (!pool || pool.length === 0) {
+        bags.english[currentLevel] = [...englishDB[currentLevel]].sort(() => Math.random() - 0.5);
+      }
+      return bags.english[currentLevel].pop();
+    }
+
+    // --- 年級與科目切換 ---
+    function switchLevel(level) {
+      currentLevel = level;
+      localStorage.setItem('kids_grade_level', level);
+      document.getElementById('lvl-low').className = `level-btn ${level === 'low' ? 'active' : ''}`;
+      document.getElementById('lvl-mid').className = `level-btn ${level === 'mid' ? 'active' : ''}`;
+      document.getElementById('lvl-high').className = `level-btn ${level === 'high' ? 'active' : ''}`;
+      nextQuestion();
+    }
+
+    function switchSubject(subject) {
+      ensureAudioResumed();
+      currentSubject = subject;
+      combo = 0;
+      updateComboUI();
+      document.getElementById('btn-math').className = `nav-btn ${subject === 'math' ? 'active' : ''}`;
+      document.getElementById('btn-multiply').className = `nav-btn ${subject === 'multiply' ? 'active' : ''}`;
+      document.getElementById('btn-chinese').className = `nav-btn ${subject === 'chinese' ? 'active' : ''}`;
+      document.getElementById('btn-eng').className = `nav-btn ${subject === 'english' ? 'active' : ''}`;
+      nextQuestion();
     }
 
     function updateRankUI() {
@@ -560,6 +672,7 @@
     }
 
     function speakCurrentQuestion() {
+      ensureAudioResumed();
       if (!('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel();
       if (currentSubject === 'english' && currentAnswer) {
@@ -575,77 +688,102 @@
       }
     }
 
-    // --- 背景音樂 (Web Audio API) ---
+    // --- 龍貓主題曲合成引擎 ---
+    const totoroMelody = [
+      { note: 67, dur: 0.35 }, { note: 69, dur: 0.35 }, { note: 71, dur: 0.7 },
+      { note: 67, dur: 0.35 }, { note: 69, dur: 0.35 }, { note: 71, dur: 0.7 },
+      { note: 72, dur: 0.35 }, { note: 71, dur: 0.35 }, { note: 69, dur: 0.35 }, { note: 67, dur: 0.35 },
+      { note: 65, dur: 0.7 },  { note: 67, dur: 0.7 },
+      { note: 67, dur: 0.35 }, { note: 69, dur: 0.35 }, { note: 71, dur: 0.7 },
+      { note: 67, dur: 0.35 }, { note: 69, dur: 0.35 }, { note: 71, dur: 0.7 },
+      { note: 72, dur: 0.35 }, { note: 74, dur: 0.35 }, { note: 76, dur: 0.7 },
+      { note: 74, dur: 0.35 }, { note: 72, dur: 0.35 }, { note: 71, dur: 0.7 },
+      { note: 69, dur: 0.7 },  { note: 67, dur: 1.0 }
+    ];
+
     let audioCtx = null;
-    let bgmInterval = null;
+    let bgmTimer = null;
     let isBgmPlaying = false;
-    let hasUserInteracted = false;
+    let melodyIndex = 0;
 
-    function initAudio() {
+    function getAudioContext() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
     }
 
-    const melody = [60, 64, 67, 72, 71, 67, 64, 62];
-    let noteIndex = 0;
+    function ensureAudioResumed() {
+      const ctx = getAudioContext();
+      if (ctx.state === 'suspended') ctx.resume();
+    }
 
-    function playMelodyNote() {
-      if (!isBgmPlaying || !audioCtx) return;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
+    function playTotoroNote(midiNote, duration) {
+      if (!isBgmPlaying) return;
+      const ctx = getAudioContext();
+      if (ctx.state === 'suspended') ctx.resume();
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
       osc.type = 'triangle';
-      const freq = 440 * Math.pow(2, (melody[noteIndex % melody.length] - 69) / 12);
-      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.025, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+      const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.08, ctx.currentTime + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+
       osc.connect(gain);
-      gain.connect(audioCtx.destination);
+      gain.connect(ctx.destination);
       osc.start();
-      osc.stop(audioCtx.currentTime + 0.45);
-      noteIndex++;
+      osc.stop(ctx.currentTime + duration + 0.05);
+
+      if (midiNote === 67 || midiNote === 72) {
+        const bassOsc = ctx.createOscillator();
+        const bassGain = ctx.createGain();
+        bassOsc.type = 'sine';
+        bassOsc.frequency.setValueAtTime(440 * Math.pow(2, (midiNote - 12 - 69) / 12), ctx.currentTime);
+        bassGain.gain.setValueAtTime(0.04, ctx.currentTime);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+        bassOsc.connect(bassGain);
+        bassGain.connect(ctx.destination);
+        bassOsc.start();
+        bassOsc.stop(ctx.currentTime + 0.85);
+      }
     }
 
-    function tryAutoPlayBGM() {
-      if (hasUserInteracted) return;
-      hasUserInteracted = true;
-      startBGM();
+    function stepTotoro() {
+      if (!isBgmPlaying) return;
+      const current = totoroMelody[melodyIndex % totoroMelody.length];
+      playTotoroNote(current.note, current.dur);
+      melodyIndex++;
+      bgmTimer = setTimeout(stepTotoro, current.dur * 1000);
     }
 
     function startBGM() {
-      initAudio();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
+      ensureAudioResumed();
       isBgmPlaying = true;
-      if (bgmInterval) clearInterval(bgmInterval);
-      bgmInterval = setInterval(playMelodyNote, 400);
+      melodyIndex = 0;
+      if (bgmTimer) clearTimeout(bgmTimer);
+      stepTotoro();
       const btn = document.getElementById('bgm-btn');
-      btn.innerText = '🎵 音樂: 開啟';
+      btn.innerText = '🎵 龍貓音樂: 播放中';
       btn.classList.add('playing');
     }
 
     function stopBGM() {
       isBgmPlaying = false;
-      if (bgmInterval) clearInterval(bgmInterval);
+      if (bgmTimer) clearTimeout(bgmTimer);
       const btn = document.getElementById('bgm-btn');
-      btn.innerText = '🎵 音樂: 關閉';
+      btn.innerText = '🎵 龍貓音樂: 關閉';
       btn.classList.remove('playing');
     }
 
     function toggleBGM() {
-      hasUserInteracted = true;
+      ensureAudioResumed();
       if (isBgmPlaying) stopBGM();
       else startBGM();
     }
 
-    function switchSubject(subject) {
-      currentSubject = subject;
-      combo = 0;
-      updateComboUI();
-      document.getElementById('btn-math').className = `nav-btn ${subject === 'math' ? 'active' : ''}`;
-      document.getElementById('btn-multiply').className = `nav-btn ${subject === 'multiply' ? 'active' : ''}`;
-      document.getElementById('btn-chinese').className = `nav-btn ${subject === 'chinese' ? 'active' : ''}`;
-      document.getElementById('btn-eng').className = `nav-btn ${subject === 'english' ? 'active' : ''}`;
-      nextQuestion();
-    }
-
+    // --- 出題邏輯 ---
     function nextQuestion() {
       isProcessing = false;
       document.getElementById('feedback').innerText = '';
@@ -658,26 +796,91 @@
       else generateEnglishQuestion();
     }
 
+    // 數學難度聯動年級
     function generateMathQuestion() {
       document.getElementById('audio-btn').style.display = 'none';
       const isAddition = Math.random() > 0.5;
       let a, b, ans;
 
-      if (isAddition) {
-        a = Math.floor(Math.random() * 30) + 12;
-        b = Math.floor(Math.random() * 20) + 8;
-        ans = a + b;
-        document.getElementById('question').innerText = `${a} ➕ ${b} ＝ ?`;
+      if (currentLevel === 'low') {
+        // 低年級：20以內進退位
+        if (isAddition) {
+          a = Math.floor(Math.random() * 12) + 5;
+          b = Math.floor(Math.random() * 8) + 3;
+          ans = a + b;
+          document.getElementById('question').innerText = `${a} ➕ ${b} ＝ ?`;
+        } else {
+          a = Math.floor(Math.random() * 12) + 8;
+          b = Math.floor(Math.random() * (a - 2)) + 1;
+          ans = a - b;
+          document.getElementById('question').innerText = `${a} ➖ ${b} ＝ ?`;
+        }
+      } else if (currentLevel === 'mid') {
+        // 中年級：兩位數進位退位加減
+        if (isAddition) {
+          a = Math.floor(Math.random() * 45) + 18;
+          b = Math.floor(Math.random() * 35) + 12;
+          ans = a + b;
+          document.getElementById('question').innerText = `${a} ➕ ${b} ＝ ?`;
+        } else {
+          a = Math.floor(Math.random() * 50) + 35;
+          b = Math.floor(Math.random() * 25) + 14;
+          ans = a - b;
+          document.getElementById('question').innerText = `${a} ➖ ${b} ＝ ?`;
+        }
       } else {
-        a = Math.floor(Math.random() * 40) + 20;
-        b = Math.floor(Math.random() * 15) + 6;
-        ans = a - b;
-        document.getElementById('question').innerText = `${a} ➖ ${b} ＝ ?`;
+        // 高年級：三位數進位與綜合加減
+        if (isAddition) {
+          a = Math.floor(Math.random() * 350) + 125;
+          b = Math.floor(Math.random() * 250) + 98;
+          ans = a + b;
+          document.getElementById('question').innerText = `${a} ➕ ${b} ＝ ?`;
+        } else {
+          a = Math.floor(Math.random() * 400) + 300;
+          b = Math.floor(Math.random() * 200) + 85;
+          ans = a - b;
+          document.getElementById('question').innerText = `${a} ➖ ${b} ＝ ?`;
+        }
       }
 
       currentAnswer = ans;
       let options = [ans];
       const offsets = [-10, 10, -1, 1];
+      for (let offset of offsets) {
+        let fake = ans + offset;
+        if (fake > 0 && !options.includes(fake)) options.push(fake);
+        if (options.length === 4) break;
+      }
+      while (options.length < 4) {
+        let fake = ans + Math.floor(Math.random() * 11) - 5;
+        if (fake > 0 && !options.includes(fake)) options.push(fake);
+      }
+      options.sort(() => Math.random() - 0.5);
+      renderButtons(options, (val) => val === currentAnswer);
+    }
+
+    function generateMultiplyQuestion() {
+      document.getElementById('audio-btn').style.display = 'none';
+      let a, b;
+      if (currentLevel === 'low') {
+        // 低年級：2~5 的乘法
+        a = Math.floor(Math.random() * 4) + 2;
+        b = Math.floor(Math.random() * 9) + 1;
+      } else if (currentLevel === 'mid') {
+        // 中年級：完整 2~9 乘法
+        a = Math.floor(Math.random() * 8) + 2;
+        b = Math.floor(Math.random() * 9) + 1;
+      } else {
+        // 高年級：兩位數乘一位數 (如 14 x 6)
+        a = Math.floor(Math.random() * 15) + 11;
+        b = Math.floor(Math.random() * 7) + 3;
+      }
+      const ans = a * b;
+      currentAnswer = ans;
+      document.getElementById('question').innerText = `${a} ✖️ ${b} ＝ ?`;
+
+      let options = [ans];
+      const offsets = [-a, a, 1, -1];
       for (let offset of offsets) {
         let fake = ans + offset;
         if (fake > 0 && !options.includes(fake)) options.push(fake);
@@ -691,31 +894,8 @@
       renderButtons(options, (val) => val === currentAnswer);
     }
 
-    function generateMultiplyQuestion() {
-      document.getElementById('audio-btn').style.display = 'none';
-      const a = Math.floor(Math.random() * 8) + 2;
-      const b = Math.floor(Math.random() * 9) + 1;
-      const ans = a * b;
-      currentAnswer = ans;
-      document.getElementById('question').innerText = `${a} ✖️ ${b} ＝ ?`;
-
-      let options = [ans];
-      const offsets = [-a, a, 1, -1];
-      for (let offset of offsets) {
-        let fake = ans + offset;
-        if (fake > 0 && !options.includes(fake)) options.push(fake);
-        if (options.length === 4) break;
-      }
-      while (options.length < 4) {
-        let fake = (Math.floor(Math.random() * 8) + 2) * (Math.floor(Math.random() * 9) + 1);
-        if (!options.includes(fake)) options.push(fake);
-      }
-      options.sort(() => Math.random() - 0.5);
-      renderButtons(options, (val) => val === currentAnswer);
-    }
-
     function generateChineseQuestion() {
-      const qData = getNextChinese();
+      const qData = getNextChineseItem();
       currentAnswer = qData;
       document.getElementById('question').innerText = qData.q;
       document.getElementById('audio-btn').style.display = 'inline-block';
@@ -726,14 +906,16 @@
 
     function generateEnglishQuestion() {
       document.getElementById('audio-btn').style.display = 'inline-block';
-      const item = getNextEnglish();
+      const item = getNextEnglishItem();
       currentAnswer = item;
       document.getElementById('question').innerText = item.word;
       setTimeout(() => speakCurrentQuestion(), 150);
 
+      // 挑選干擾選項
+      const fullList = englishDB[currentLevel];
       let options = [item.zh];
       while (options.length < 4) {
-        let fake = allEnglishWords[Math.floor(Math.random() * allEnglishWords.length)].zh;
+        let fake = fullList[Math.floor(Math.random() * fullList.length)].zh;
         if (!options.includes(fake)) options.push(fake);
       }
       options.sort(() => Math.random() - 0.5);
@@ -748,7 +930,7 @@
         btn.innerText = val;
         btn.onclick = (e) => {
           e.stopPropagation();
-          tryAutoPlayBGM();
+          ensureAudioResumed();
           handleChoice(btn, checkFn(val));
         };
         box.appendChild(btn);
@@ -764,7 +946,6 @@
         updateComboUI();
         score += 1;
 
-        // 紀錄分科題數
         if (currentSubject === 'math') stats.math += 1;
         else if (currentSubject === 'multiply') stats.multiply += 1;
         else if (currentSubject === 'chinese') stats.chinese += 1;
@@ -784,8 +965,9 @@
       }
     }
 
+    // 初始化年級選取狀態
+    switchLevel(currentLevel);
     updateRankUI();
-    nextQuestion();
   </script>
 </body>
 </html>
