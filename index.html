@@ -5,15 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>歡樂學習樂園</title>
   
-  <!-- 設定 iPad 加入主畫面時的圖示與全螢幕體驗 -->
+  <!-- iPad 全螢幕與桌面專屬 Icon 設定 -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="歡樂學習">
+  <link rel="apple-touch-icon" href="https://api.iconify.design/noto:acorn.svg">
+  <link rel="icon" href="https://api.iconify.design/noto:acorn.svg">
 
   <style>
     :root {
-      --primary: #52796F;      /* 森林墨綠 */
-      --secondary: #84A98C;    /* 草綠色 */
+      --primary: #52796F;
+      --secondary: #84A98C;
       --success: #2ECC71;
       --danger: #E74C3C;
       --card-bg: rgba(255, 255, 255, 0.94);
@@ -50,7 +52,6 @@
       z-index: -1;
     }
 
-    /* 頂部導航條 */
     .header-bar {
       width: 100%;
       max-width: 650px;
@@ -66,7 +67,7 @@
     }
 
     .title-area {
-      font-size: 1.4rem;
+      font-size: 1.35rem;
       font-weight: 900;
       color: #354F52;
       display: flex;
@@ -127,7 +128,6 @@
       transform: translateY(2px);
     }
 
-    /* 主卡片 */
     .card {
       background: var(--card-bg);
       width: 100%;
@@ -139,24 +139,13 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-height: 480px;
+      min-height: 490px;
       position: relative;
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
-    .card::after {
-      content: "🍃";
-      position: absolute;
-      bottom: -15px;
-      right: 25px;
-      font-size: 1.8rem;
-    }
-
-    .card::before {
-      content: "🐾";
-      position: absolute;
-      bottom: -15px;
-      left: 25px;
-      font-size: 1.8rem;
+    .card.bounce {
+      transform: scale(1.02);
     }
 
     .score-container {
@@ -164,7 +153,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
     .score-board {
@@ -173,14 +162,30 @@
       color: #D88C51;
     }
 
-    .reset-btn {
-      background: none;
-      border: none;
-      color: #7F8C8D;
-      font-size: 0.85rem;
-      text-decoration: underline;
-      cursor: pointer;
-      padding: 4px;
+    .combo-badge {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #E76F51;
+      background: #FFE8D6;
+      padding: 3px 10px;
+      border-radius: 12px;
+      display: none;
+      animation: pulse 0.8s infinite alternate;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.1); }
+    }
+
+    .rank-bar {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #52796F;
+      margin-bottom: 12px;
+      background: #D8F3DC;
+      padding: 4px 14px;
+      border-radius: 16px;
     }
 
     .question-box {
@@ -189,12 +194,12 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      margin-bottom: 25px;
+      margin-bottom: 20px;
       text-align: center;
     }
 
     .question-title {
-      font-size: 2.8rem;
+      font-size: 2.9rem;
       font-weight: 800;
       letter-spacing: 1px;
       color: #2F3E46;
@@ -225,7 +230,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 16px;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
     }
 
     .option-btn {
@@ -263,13 +268,23 @@
     }
 
     .feedback-msg {
-      font-size: 1.4rem;
+      font-size: 1.45rem;
       font-weight: bold;
-      height: 35px;
+      height: 38px;
       color: #354F52;
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+
+    .reset-btn {
+      background: none;
+      border: none;
+      color: #95A5A6;
+      font-size: 0.85rem;
+      text-decoration: underline;
+      cursor: pointer;
+      margin-top: 6px;
     }
 
     .particle {
@@ -299,8 +314,10 @@
   <div class="card" id="main-card">
     <div class="score-container">
       <div class="score-board">⭐ 橡果星星: <span id="score">0</span></div>
-      <button class="reset-btn" onclick="resetScore()">重置星星</button>
+      <div class="combo-badge" id="combo-badge">🔥 2 連勝!</div>
     </div>
+    
+    <div class="rank-bar" id="rank-bar">稱號：森林小見習生 🌿</div>
 
     <div class="question-box">
       <div class="question-title" id="question">森林探險準備中...</div>
@@ -310,30 +327,77 @@
     <div class="options-grid" id="options"></div>
 
     <div class="feedback-msg" id="feedback"></div>
+    <button class="reset-btn" onclick="resetScore()">重置星星</button>
   </div>
 
   <script>
     let currentSubject = 'math';
-    
-    // 從瀏覽器本地儲存讀取星星分數，沒有就預設 0
     let score = parseInt(localStorage.getItem('kids_stars') || '0', 10);
-    document.getElementById('score').innerText = score;
-
+    let combo = 0;
     let currentAnswer = null;
     let isProcessing = false;
 
-    const englishWords = [
+    // --- 40 個國小高頻生活英文單字庫 ---
+    const allEnglishWords = [
       { word: "Cat", zh: "貓咪" }, { word: "Dog", zh: "狗狗" }, { word: "Apple", zh: "蘋果" },
       { word: "Book", zh: "書本" }, { word: "Red", zh: "紅色" }, { word: "Blue", zh: "藍色" },
       { word: "Star", zh: "星星" }, { word: "Fish", zh: "小魚" }, { word: "Bird", zh: "小鳥" },
-      { word: "Car", zh: "汽車" }, { word: "Sun", zh: "太陽" }, { word: "Moon", zh: "月亮" }
+      { word: "Car", zh: "汽車" }, { word: "Sun", zh: "太陽" }, { word: "Moon", zh: "月亮" },
+      { word: "Tree", zh: "大樹" }, { word: "Water", zh: "水" }, { word: "Milk", zh: "牛奶" },
+      { word: "Bread", zh: "麵包" }, { word: "Egg", zh: "雞蛋" }, { word: "Banana", zh: "香蕉" },
+      { word: "Bear", zh: "小熊" }, { word: "Rabbit", zh: "兔子" }, { word: "Pencil", zh: "鉛筆" },
+      { word: "School", zh: "學校" }, { word: "Bag", zh: "書包" }, { word: "Flower", zh: "花朵" },
+      { word: "Rain", zh: "下雨" }, { word: "Wind", zh: "微風" }, { word: "Green", zh: "綠色" },
+      { word: "Yellow", zh: "黃色" }, { word: "Duck", zh: "鴨子" }, { word: "Frog", zh: "青蛙" },
+      { word: "Hand", zh: "手" }, { word: "Eye", zh: "眼睛" }, { word: "Nose", zh: "鼻子" },
+      { word: "Mouth", zh: "嘴巴" }, { word: "Door", zh: "門" }, { word: "Chair", zh: "椅子" },
+      { word: "Hat", zh: "帽子" }, { word: "Shoe", zh: "鞋子" }, { word: "Smile", zh: "微笑" },
+      { word: "Heart", zh: "愛心" }
     ];
+
+    // 防重複抽牌袋（Shuffle Bag）
+    let remainingWords = [];
+    function getNextEnglishWord() {
+      if (remainingWords.length === 0) {
+        remainingWords = [...allEnglishWords].sort(() => Math.random() - 0.5);
+      }
+      return remainingWords.pop();
+    }
+
+    function updateRankUI() {
+      document.getElementById('score').innerText = score;
+      const rankBar = document.getElementById('rank-bar');
+      if (score >= 50) {
+        rankBar.innerText = '稱號：森林守護大龍貓 👑✨';
+      } else if (score >= 30) {
+        rankBar.innerText = '稱號：神祕森林精靈 🌟';
+      } else if (score >= 15) {
+        rankBar.innerText = '稱號：活潑小松鼠 🌰';
+      } else if (score >= 5) {
+        rankBar.innerText = '稱號：好奇探險家 🎒';
+      } else {
+        rankBar.innerText = '稱號：森林小見習生 🌿';
+      }
+    }
+    updateRankUI();
 
     function resetScore() {
       if (confirm('確定要把收集的星星歸零重新開始嗎？')) {
         score = 0;
+        combo = 0;
         localStorage.setItem('kids_stars', '0');
-        document.getElementById('score').innerText = score;
+        updateComboUI();
+        updateRankUI();
+      }
+    }
+
+    function updateComboUI() {
+      const badge = document.getElementById('combo-badge');
+      if (combo >= 2) {
+        badge.innerText = `🔥 ${combo} 連勝!`;
+        badge.style.display = 'block';
+      } else {
+        badge.style.display = 'none';
       }
     }
 
@@ -467,15 +531,15 @@
 
     function createParticles(element, type) {
       const rect = element.getBoundingClientRect();
-      const count = 12;
+      const count = type === 'leaf' ? 14 : 6;
       for (let i = 0; i < count; i++) {
         const particle = document.createElement('div');
         particle.className = 'particle';
         particle.style.left = `${rect.left + rect.width / 2 + (Math.random() - 0.5) * 80}px`;
         particle.style.top = `${rect.top + rect.height / 2 + (Math.random() - 0.5) * 40}px`;
-        particle.style.fontSize = `${Math.floor(Math.random() * 12) + 16}px`;
+        particle.style.fontSize = `${Math.floor(Math.random() * 12) + 18}px`;
         if (type === 'leaf') {
-          const leaves = ['🍃', '🍂', '🍁', '✨', '⭐'];
+          const leaves = ['🍃', '🍂', '🍁', '✨', '⭐', '🌰'];
           particle.innerText = leaves[Math.floor(Math.random() * leaves.length)];
         } else {
           particle.innerText = '🌀';
@@ -487,6 +551,8 @@
 
     function switchSubject(subject) {
       currentSubject = subject;
+      combo = 0;
+      updateComboUI();
       document.getElementById('btn-math').className = `nav-btn ${subject === 'math' ? 'active' : ''}`;
       document.getElementById('btn-multiply').className = `nav-btn ${subject === 'multiply' ? 'active' : ''}`;
       document.getElementById('btn-eng').className = `nav-btn ${subject === 'english' ? 'active' : ''}`;
@@ -564,7 +630,7 @@
 
     function generateEnglishQuestion() {
       document.getElementById('audio-btn').style.display = 'inline-block';
-      const item = englishWords[Math.floor(Math.random() * englishWords.length)];
+      const item = getNextEnglishWord();
       currentAnswer = item;
 
       document.getElementById('question').innerText = item.word;
@@ -572,7 +638,7 @@
 
       let options = [item.zh];
       while (options.length < 4) {
-        let fakeItem = englishWords[Math.floor(Math.random() * englishWords.length)];
+        let fakeItem = allEnglishWords[Math.floor(Math.random() * allEnglishWords.length)];
         if (!options.includes(fakeItem.zh)) options.push(fakeItem.zh);
       }
       options.sort(() => Math.random() - 0.5);
@@ -593,27 +659,37 @@
     function handleChoice(btn, isCorrect) {
       if (isProcessing) return;
 
+      const card = document.getElementById('main-card');
+
       if (isCorrect) {
         isProcessing = true;
         btn.classList.add('correct');
         playBeep(true);
         createParticles(btn, 'leaf');
-        
-        // 分數 +1 並儲存至 localStorage
+
+        // 卡片彈跳反饋
+        card.classList.add('bounce');
+        setTimeout(() => card.classList.remove('bounce'), 250);
+
+        combo += 1;
+        updateComboUI();
+
         score += 1;
         localStorage.setItem('kids_stars', score.toString());
-        document.getElementById('score').innerText = score;
-        
-        const encourageMsg = ['🌰 撿到一顆橡果！', '🍂 太厲害了！', '✨ 獲得森林祝福！', '🎨 答對了！'];
+        updateRankUI();
+
+        const encourageMsg = ['🌰 撿到一顆橡果！', '🍂 太厲害了！', '✨ 獲得森林祝福！', '🎉 答對了！'];
         document.getElementById('feedback').innerHTML = encourageMsg[Math.floor(Math.random() * encourageMsg.length)];
 
         setTimeout(() => {
           nextQuestion();
-        }, 1200);
+        }, 1100);
       } else {
         btn.classList.add('wrong');
         playBeep(false);
         createParticles(btn, 'wrong');
+        combo = 0;
+        updateComboUI();
         document.getElementById('feedback').innerHTML = '🍃 森林守護者拍了拍你（再試一次喔）';
         setTimeout(() => {
           btn.classList.remove('wrong');
