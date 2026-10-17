@@ -2,6 +2,9 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>歡樂學習樂園</title>
   
@@ -111,7 +114,7 @@
       box-shadow: 0 3px 0 #B0533C;
     }
 
-    /* 年級難度選擇條 */
+    /* 年級難度切換列 (超醒目樣式) */
     .level-bar {
       width: 100%;
       max-width: 650px;
@@ -119,30 +122,33 @@
       justify-content: center;
       gap: 8px;
       margin-bottom: 10px;
-      background: rgba(255, 255, 255, 0.85);
-      padding: 5px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 6px;
       border-radius: 24px;
-      border: 2px solid #CAD2C5;
+      border: 2px solid #BCC8B6;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.04);
     }
 
     .level-btn {
       flex: 1;
       border: none;
-      background: transparent;
-      padding: 6px 8px;
-      font-size: 0.9rem;
+      background: #E8EFE6;
+      padding: 8px 6px;
+      font-size: 0.92rem;
       font-weight: 800;
       color: #52796F;
       border-radius: 18px;
       cursor: pointer;
       transition: all 0.15s ease;
       touch-action: manipulation;
+      text-align: center;
     }
 
     .level-btn.active {
-      background: #52796F;
+      background: #406343;
       color: white;
-      box-shadow: 0 3px 0 #354F52;
+      box-shadow: 0 3px 0 #283E2A;
+      transform: translateY(1px);
     }
 
     /* 科目導航列 */
@@ -413,7 +419,7 @@
     </div>
   </div>
 
-  <!-- 年級難度切換列 -->
+  <!-- 年級難度切換列 (低/中/高) -->
   <div class="level-bar">
     <button class="level-btn active" id="lvl-low" onclick="switchLevel('low')">🌱 低年級 (1-2年)</button>
     <button class="level-btn" id="lvl-mid" onclick="switchLevel('mid')">🌿 中年級 (3-4年)</button>
@@ -464,11 +470,10 @@
   </div>
 
   <script>
-    // --- 玩家設定與存檔 ---
     let playerName = localStorage.getItem('kids_player_name') || '小寶貝';
     document.getElementById('player-name-display').innerText = playerName;
 
-    let currentLevel = localStorage.getItem('kids_grade_level') || 'low'; // low, mid, high
+    let currentLevel = localStorage.getItem('kids_grade_level') || 'low';
     let currentSubject = 'math';
     let stats = JSON.parse(localStorage.getItem('kids_stats') || '{"math":0,"multiply":0,"chinese":0,"english":0}');
     let score = parseInt(localStorage.getItem('kids_stars') || '0', 10);
@@ -525,9 +530,7 @@
       document.getElementById('stat-eng').innerText = stats.english;
     }
 
-    // ==========================================
     // 臺灣 108 課綱：分級國文題庫
-    // ==========================================
     const chineseDB = {
       low: [
         { q: "「河」的部首是什麼？", ans: "氵(水)", options: ["氵(水)", "木", "口", "日"] },
@@ -568,7 +571,7 @@
         { q: "「臥薪嘗膽」與哪位歷史人物有關？", ans: "勾踐", options: ["勾踐", "項羽", "劉備", "諸葛亮"] },
         { q: "「三顧茅廬」比喻真心誠意邀請？", ans: "諸葛亮", options: ["諸葛亮", "周瑜", "曹操", "孫權"] },
         { q: "「出類拔（ ）」形容超越同類？", ans: "萃", options: ["萃", "翠", "碎", "粹"] },
-        { q: "「（ ）然開朗」填入正確國字？", ans: "豁", options: ["豁", "豁", "闊", "和"] },
+        { q: "「（ ）然開朗」填入正確國字？", ans: "豁", options: ["豁", "闊", "和", "賀"] },
         { q: "「塞翁失馬，焉知非（ ）」？", ans: "福", options: ["福", "禍", "利", "吉"] },
         { q: "（ ）困難再大，我們（ ）要克服。", ans: "即使...也...", options: ["即使...也...", "因為...所以...", "雖然...但是...", "不但...而且..."] },
         { q: "「迫不及待」中的「待」意思是？", ans: "等待", options: ["等待", "招待", "待遇", "對待"] },
@@ -577,9 +580,7 @@
       ]
     };
 
-    // ==========================================
     // 臺灣 108 課綱：分級英語單字庫
-    // ==========================================
     const englishDB = {
       low: [
         { word: "Cat", zh: "貓咪" }, { word: "Dog", zh: "狗狗" }, { word: "Apple", zh: "蘋果" },
@@ -607,7 +608,6 @@
       ]
     };
 
-    // 零重複抽牌箱管理 (Shuffle Bags)
     let bags = {
       chinese: { low: [], mid: [], high: [] },
       english: { low: [], mid: [], high: [] }
@@ -629,7 +629,6 @@
       return bags.english[currentLevel].pop();
     }
 
-    // --- 年級與科目切換 ---
     function switchLevel(level) {
       currentLevel = level;
       localStorage.setItem('kids_grade_level', level);
@@ -688,7 +687,6 @@
       }
     }
 
-    // --- 龍貓主題曲合成引擎 ---
     const totoroMelody = [
       { note: 67, dur: 0.35 }, { note: 69, dur: 0.35 }, { note: 71, dur: 0.7 },
       { note: 67, dur: 0.35 }, { note: 69, dur: 0.35 }, { note: 71, dur: 0.7 },
@@ -723,6 +721,7 @@
 
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
+
       osc.type = 'triangle';
       const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
       osc.frequency.setValueAtTime(freq, ctx.currentTime);
@@ -783,7 +782,6 @@
       else startBGM();
     }
 
-    // --- 出題邏輯 ---
     function nextQuestion() {
       isProcessing = false;
       document.getElementById('feedback').innerText = '';
@@ -796,14 +794,12 @@
       else generateEnglishQuestion();
     }
 
-    // 數學難度聯動年級
     function generateMathQuestion() {
       document.getElementById('audio-btn').style.display = 'none';
       const isAddition = Math.random() > 0.5;
       let a, b, ans;
 
       if (currentLevel === 'low') {
-        // 低年級：20以內進退位
         if (isAddition) {
           a = Math.floor(Math.random() * 12) + 5;
           b = Math.floor(Math.random() * 8) + 3;
@@ -816,7 +812,6 @@
           document.getElementById('question').innerText = `${a} ➖ ${b} ＝ ?`;
         }
       } else if (currentLevel === 'mid') {
-        // 中年級：兩位數進位退位加減
         if (isAddition) {
           a = Math.floor(Math.random() * 45) + 18;
           b = Math.floor(Math.random() * 35) + 12;
@@ -829,7 +824,6 @@
           document.getElementById('question').innerText = `${a} ➖ ${b} ＝ ?`;
         }
       } else {
-        // 高年級：三位數進位與綜合加減
         if (isAddition) {
           a = Math.floor(Math.random() * 350) + 125;
           b = Math.floor(Math.random() * 250) + 98;
@@ -863,15 +857,12 @@
       document.getElementById('audio-btn').style.display = 'none';
       let a, b;
       if (currentLevel === 'low') {
-        // 低年級：2~5 的乘法
         a = Math.floor(Math.random() * 4) + 2;
         b = Math.floor(Math.random() * 9) + 1;
       } else if (currentLevel === 'mid') {
-        // 中年級：完整 2~9 乘法
         a = Math.floor(Math.random() * 8) + 2;
         b = Math.floor(Math.random() * 9) + 1;
       } else {
-        // 高年級：兩位數乘一位數 (如 14 x 6)
         a = Math.floor(Math.random() * 15) + 11;
         b = Math.floor(Math.random() * 7) + 3;
       }
@@ -911,7 +902,6 @@
       document.getElementById('question').innerText = item.word;
       setTimeout(() => speakCurrentQuestion(), 150);
 
-      // 挑選干擾選項
       const fullList = englishDB[currentLevel];
       let options = [item.zh];
       while (options.length < 4) {
@@ -965,7 +955,7 @@
       }
     }
 
-    // 初始化年級選取狀態
+    // 初始化狀態
     switchLevel(currentLevel);
     updateRankUI();
   </script>
