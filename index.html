@@ -4,13 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>歡樂學習樂園</title>
+  
+  <!-- 設定 iPad 加入主畫面時的圖示與全螢幕體驗 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="歡樂學習">
+
   <style>
     :root {
       --primary: #52796F;      /* 森林墨綠 */
       --secondary: #84A98C;    /* 草綠色 */
       --success: #2ECC71;
       --danger: #E74C3C;
-      --card-bg: rgba(255, 255, 255, 0.94); /* 半透明手繪質感 */
+      --card-bg: rgba(255, 255, 255, 0.94);
       --text: #2F3E46;
     }
 
@@ -25,7 +31,6 @@
       margin: 0;
       padding: 16px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", "Noto Sans TC", sans-serif;
-      /* 載入吉卜力插圖作為整體背景 */
       background: url('https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?auto=format&fit=crop&q=80&w=1200') no-repeat center center fixed;
       background-size: cover;
       color: var(--text);
@@ -37,7 +42,6 @@
       overflow-x: hidden;
     }
 
-    /* 手繪風格森林與生物插畫裝飾 (背景模糊效果) */
     body::before {
       content: "";
       position: absolute;
@@ -46,7 +50,7 @@
       z-index: -1;
     }
 
-    /* BGM 控制區與標題 */
+    /* 頂部導航條 */
     .header-bar {
       width: 100%;
       max-width: 650px;
@@ -62,7 +66,7 @@
     }
 
     .title-area {
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       font-weight: 900;
       color: #354F52;
       display: flex;
@@ -75,8 +79,8 @@
       color: white;
       border: none;
       border-radius: 20px;
-      padding: 6px 16px;
-      font-size: 0.95rem;
+      padding: 6px 14px;
+      font-size: 0.9rem;
       font-weight: bold;
       cursor: pointer;
       box-shadow: 0 3px 0 #52796F;
@@ -91,7 +95,6 @@
       box-shadow: 0 3px 0 #B0533C;
     }
 
-    /* 模式切換按鈕 (圓潤手繪風) */
     .header-nav {
       width: 100%;
       max-width: 650px;
@@ -124,7 +127,7 @@
       transform: translateY(2px);
     }
 
-    /* 主遊戲卡片 */
+    /* 主卡片 */
     .card {
       background: var(--card-bg);
       width: 100%;
@@ -140,7 +143,6 @@
       position: relative;
     }
 
-    /* 吉卜力氛圍小怪獸與植物裝飾 */
     .card::after {
       content: "🍃";
       position: absolute;
@@ -157,11 +159,28 @@
       font-size: 1.8rem;
     }
 
+    .score-container {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
     .score-board {
       font-size: 1.35rem;
       font-weight: 700;
-      color: #D88C51; /* 溫馨橘 */
-      margin-bottom: 12px;
+      color: #D88C51;
+    }
+
+    .reset-btn {
+      background: none;
+      border: none;
+      color: #7F8C8D;
+      font-size: 0.85rem;
+      text-decoration: underline;
+      cursor: pointer;
+      padding: 4px;
     }
 
     .question-box {
@@ -201,7 +220,6 @@
       box-shadow: none;
     }
 
-    /* 觸控大按鈕（手繪圓潤框線） */
     .options-grid {
       width: 100%;
       display: grid;
@@ -245,7 +263,7 @@
     }
 
     .feedback-msg {
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       font-weight: bold;
       height: 35px;
       color: #354F52;
@@ -254,7 +272,6 @@
       justify-content: center;
     }
 
-    /* 落葉與光點粒子特效 */
     .particle {
       position: absolute;
       pointer-events: none;
@@ -268,7 +285,6 @@
 </head>
 <body>
 
-  <!-- BGM 與標題區 -->
   <div class="header-bar">
     <div class="title-area">🪵 歡樂學習森林</div>
     <button class="bgm-btn" id="bgm-btn" onclick="toggleBGM()">🎵 播放冒險音樂</button>
@@ -281,7 +297,10 @@
   </div>
 
   <div class="card" id="main-card">
-    <div class="score-board">⭐ 橡果星星: <span id="score">0</span></div>
+    <div class="score-container">
+      <div class="score-board">⭐ 橡果星星: <span id="score">0</span></div>
+      <button class="reset-btn" onclick="resetScore()">重置星星</button>
+    </div>
 
     <div class="question-box">
       <div class="question-title" id="question">森林探險準備中...</div>
@@ -295,7 +314,11 @@
 
   <script>
     let currentSubject = 'math';
-    let score = 0;
+    
+    // 從瀏覽器本地儲存讀取星星分數，沒有就預設 0
+    let score = parseInt(localStorage.getItem('kids_stars') || '0', 10);
+    document.getElementById('score').innerText = score;
+
     let currentAnswer = null;
     let isProcessing = false;
 
@@ -306,7 +329,15 @@
       { word: "Car", zh: "汽車" }, { word: "Sun", zh: "太陽" }, { word: "Moon", zh: "月亮" }
     ];
 
-    // --- 優化發音引擎：精準挑選美式英語自然音 ---
+    function resetScore() {
+      if (confirm('確定要把收集的星星歸零重新開始嗎？')) {
+        score = 0;
+        localStorage.setItem('kids_stars', '0');
+        document.getElementById('score').innerText = score;
+      }
+    }
+
+    // 發音引擎優化
     let preferredVoice = null;
     function initVoices() {
       if (!('speechSynthesis' in window)) return;
@@ -327,12 +358,12 @@
       const utterance = new SpeechSynthesisUtterance(currentAnswer.word);
       if (preferredVoice) utterance.voice = preferredVoice;
       utterance.lang = 'en-US';
-      utterance.rate = 0.8;  // 稍微放慢，發音更圓潤清楚
-      utterance.pitch = 1.1; // 稍微帶點活潑的孩子感
+      utterance.rate = 0.8;
+      utterance.pitch = 1.1;
       window.speechSynthesis.speak(utterance);
     }
 
-    // --- 超輕量合成器：手繪風/吉卜力風 背景音樂 (Web Audio API) ---
+    // 音樂合成器
     let audioCtx = null;
     let bgmInterval = null;
     let isBgmPlaying = false;
@@ -342,49 +373,40 @@
       if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         synthVol = audioCtx.createGain();
-        synthVol.gain.value = 0.05; // 輕柔不刺耳
+        synthVol.gain.value = 0.05;
         synthVol.connect(audioCtx.destination);
       }
     }
 
-    // 吉卜力風格「溫馨、慢速三拍子」和弦與旋律音符 (以 A 小調與 C 大調為主)
     const melody = [
       60, 64, 67, 72, 71, 67, 64, 62,
       60, 64, 67, 72, 74, 76, 79, 76,
       74, 72, 69, 72, 71, 67, 64, 62,
       60, 64, 67, 72, 71, 67, 64, 60
-    ]; // 鋼琴、鐵琴音高
+    ];
     let noteIndex = 0;
 
     function playGhibliMelody() {
       if (!isBgmPlaying) return;
       const osc = audioCtx.createOscillator();
       const gainNode = audioCtx.createGain();
-      
-      // 使用三角波（類似溫柔的笛子或鐵琴）
       osc.type = 'triangle';
-      
       const midNote = melody[noteIndex % melody.length];
       const freq = 440 * Math.pow(2, (midNote - 69) / 12);
-      
       osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-      
       gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.06, audioCtx.currentTime + 0.05); // 緩慢漸強
-      gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.55); // 緩慢消退
-      
+      gainNode.gain.linearRampToValueAtTime(0.06, audioCtx.currentTime + 0.05);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.55);
       osc.connect(gainNode);
       gainNode.connect(synthVol);
-      
       osc.start();
       osc.stop(audioCtx.currentTime + 0.6);
-      
-      // 伴奏和弦 (低音，增強溫暖度)
+
       if (noteIndex % 3 === 0) {
         const bassOsc = audioCtx.createOscillator();
         const bassGain = audioCtx.createGain();
         bassOsc.type = 'sine';
-        const bassNote = midNote - 12; // 低一個八度
+        const bassNote = midNote - 12;
         bassOsc.frequency.setValueAtTime(440 * Math.pow(2, (bassNote - 69) / 12), audioCtx.currentTime);
         bassGain.gain.setValueAtTime(0, audioCtx.currentTime);
         bassGain.gain.linearRampToValueAtTime(0.03, audioCtx.currentTime + 0.1);
@@ -394,14 +416,12 @@
         bassOsc.start();
         bassOsc.stop(audioCtx.currentTime + 1.0);
       }
-
       noteIndex++;
     }
 
     function toggleBGM() {
       initAudio();
       if (audioCtx.state === 'suspended') audioCtx.resume();
-
       const btn = document.getElementById('bgm-btn');
       if (isBgmPlaying) {
         isBgmPlaying = false;
@@ -410,36 +430,33 @@
         btn.classList.remove('playing');
       } else {
         isBgmPlaying = true;
-        // 每 0.35 秒播放一個溫柔的三八拍子音符
         bgmInterval = setInterval(playGhibliMelody, 350);
         btn.innerText = '⏸ 暫停冒險音樂';
         btn.classList.add('playing');
       }
     }
 
-    // --- 答對、答錯的溫馨卡通音效 ---
     function playBeep(isSuccess) {
       initAudio();
       if (audioCtx.state === 'suspended') audioCtx.resume();
-      
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.connect(gain);
       gain.connect(audioCtx.destination);
 
       if (isSuccess) {
-        osc.type = 'triangle'; // 溫暖圓潤
-        osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
-        osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.08); // E5
-        osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.16); // G5
-        osc.frequency.setValueAtTime(1046.50, audioCtx.currentTime + 0.24); // C6 (歡呼、高潮)
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+        osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.08);
+        osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.16);
+        osc.frequency.setValueAtTime(1046.50, audioCtx.currentTime + 0.24);
         gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.55);
         osc.start();
         osc.stop(audioCtx.currentTime + 0.55);
       } else {
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(293.66, audioCtx.currentTime); // D4 (微弱彈簧感)
+        osc.frequency.setValueAtTime(293.66, audioCtx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(180, audioCtx.currentTime + 0.25);
         gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
@@ -448,7 +465,6 @@
       }
     }
 
-    // --- 視覺特效：落葉與星光粒子落灑 ---
     function createParticles(element, type) {
       const rect = element.getBoundingClientRect();
       const count = 12;
@@ -458,20 +474,17 @@
         particle.style.left = `${rect.left + rect.width / 2 + (Math.random() - 0.5) * 80}px`;
         particle.style.top = `${rect.top + rect.height / 2 + (Math.random() - 0.5) * 40}px`;
         particle.style.fontSize = `${Math.floor(Math.random() * 12) + 16}px`;
-        
         if (type === 'leaf') {
           const leaves = ['🍃', '🍂', '🍁', '✨', '⭐'];
           particle.innerText = leaves[Math.floor(Math.random() * leaves.length)];
         } else {
           particle.innerText = '🌀';
         }
-
         document.body.appendChild(particle);
         setTimeout(() => particle.remove(), 1200);
       }
     }
 
-    // --- 模式與關卡切換 ---
     function switchSubject(subject) {
       currentSubject = subject;
       document.getElementById('btn-math').className = `nav-btn ${subject === 'math' ? 'active' : ''}`;
@@ -495,7 +508,6 @@
       }
     }
 
-    // 1. 基礎加減法
     function generateMathQuestion() {
       document.getElementById('audio-btn').style.display = 'none';
       const isAddition = Math.random() > 0.4;
@@ -523,7 +535,6 @@
       renderButtons(options, (val) => val === currentAnswer);
     }
 
-    // 2. 九九乘法 (2x1 ~ 9x9)
     function generateMultiplyQuestion() {
       document.getElementById('audio-btn').style.display = 'none';
       const a = Math.floor(Math.random() * 8) + 2;
@@ -551,7 +562,6 @@
       renderButtons(options, (val) => val === currentAnswer);
     }
 
-    // 3. 英文單字
     function generateEnglishQuestion() {
       document.getElementById('audio-btn').style.display = 'inline-block';
       const item = englishWords[Math.floor(Math.random() * englishWords.length)];
@@ -588,7 +598,10 @@
         btn.classList.add('correct');
         playBeep(true);
         createParticles(btn, 'leaf');
+        
+        // 分數 +1 並儲存至 localStorage
         score += 1;
+        localStorage.setItem('kids_stars', score.toString());
         document.getElementById('score').innerText = score;
         
         const encourageMsg = ['🌰 撿到一顆橡果！', '🍂 太厲害了！', '✨ 獲得森林祝福！', '🎨 答對了！'];
