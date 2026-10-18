@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>歡樂學習樂園 - 千題大容量版</title>
+  <title>歡樂學習樂園 - 音樂控制強化版</title>
   
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -51,6 +51,8 @@
       padding: 6px 14px;
       border-radius: 50px;
       border: 2px solid #D1C4E9;
+      flex-wrap: wrap;
+      gap: 6px;
     }
 
     .user-profile {
@@ -66,6 +68,7 @@
 
     .top-action-btns {
       display: flex;
+      align-items: center;
       gap: 6px;
     }
 
@@ -82,6 +85,40 @@
 
     .action-btn.gold { background: #E09F3E; }
     .action-btn.playing { background: #D946EF; }
+
+    /* 音量調節控制列 */
+    .volume-box {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: #F5F3FF;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid #DDD6FE;
+    }
+
+    .volume-icon {
+      font-size: 0.85rem;
+    }
+
+    .volume-slider {
+      -webkit-appearance: none;
+      width: 75px;
+      height: 6px;
+      border-radius: 5px;
+      background: #C4B5FD;
+      outline: none;
+    }
+
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #7C3AED;
+      cursor: pointer;
+    }
 
     .level-bar {
       width: 100%;
@@ -355,16 +392,22 @@
     }
   </style>
 </head>
-<body onclick="ensureAudioResumed()">
+<body onclick="userFirstInteract()">
 
   <div class="header-bar">
-    <div class="user-profile" onclick="changePlayerName()">
+    <div class="user-profile" onclick="event.stopPropagation(); changePlayerName()">
       <span>🦄 <span id="player-name-display">小探險家</span> ✏️</span>
     </div>
     
     <div class="top-action-btns">
-      <button class="action-btn gold" onclick="openLeaderboard()">🏆 堅果榜</button>
-      <button class="action-btn" id="bgm-btn" onclick="toggleBGM()">🎵 音樂: 關閉</button>
+      <!-- 🔊 音量大小滑桿調整器 -->
+      <div class="volume-box" onclick="event.stopPropagation()">
+        <span class="volume-icon">🔉</span>
+        <input type="range" class="volume-slider" id="bgm-volume" min="0" max="100" value="35" oninput="changeVolume(this.value)">
+      </div>
+
+      <button class="action-btn gold" onclick="event.stopPropagation(); openLeaderboard()">🏆 堅果榜</button>
+      <button class="action-btn" id="bgm-btn" onclick="event.stopPropagation(); toggleBGM()">🎵 音樂: 關閉</button>
     </div>
   </div>
 
@@ -441,7 +484,6 @@
     let currentAnswer = null;
     let isProcessing = false;
 
-    // 🛡️ 本次開啟指紋註冊表（保證單次開啟絕不撞題）
     const sessionSeenHashes = new Set();
     let sessionCount = 0;
 
@@ -452,10 +494,9 @@
     }
 
     // ========================================================
-    // 🏛️ 各科千題組合大數據矩陣 (Procedural Generation Matrix)
+    // 🏛️ 題庫矩陣（寫 ➔ 宀 已徹底校正）
     // ========================================================
     const MATRIX_DATA = {
-      // 1. 國語大庫 (部首、量詞、相反詞、多音字)
       radicals: [
         { c: "寫", r: "宀", w: ["冖", "寸", "臼", "馬"] },
         { c: "河", r: "氵(水)", w: ["木", "口", "日", "土"] },
@@ -476,21 +517,15 @@
         { c: "晨", r: "日", w: ["辰", "月", "星", "一"] },
         { c: "雪", r: "雨", w: ["彐", "水", "日", "山"] },
         { c: "雷", r: "雨", w: ["田", "电", "日", "申"] },
-        { c: "電", r: "雨", w: ["申", "日", "田", "尾"] },
         { c: "媽", r: "女", w: ["馬", "口", "日", "女"] },
         { c: "妹", r: "女", w: ["未", "木", "口", "十"] },
         { c: "鐵", r: "金", w: ["釒", "走", "矢", "土"] },
-        { c: "銅", r: "金", w: ["同", "口", "月", "一"] },
         { c: "騎", r: "馬", w: ["奇", "大", "可", "丁"] },
         { c: "打", r: "扌(手)", w: ["丁", "一", "竹", "手"] },
-        { c: "捉", r: "扌(手)", w: ["足", "口", "疋", "手"] },
         { c: "燈", r: "火", w: ["登", "豆", "皿", "火"] },
         { c: "熱", r: "灬(火)", w: ["執", "土", "丸", "火"] },
-        { c: "牆", r: "土", w: ["嗇", "片", "面", "土"] },
         { c: "問", r: "門", w: ["口", "日", "耳", "門"] },
-        { c: "閉", r: "門", w: ["才", "木", "十", "門"] },
-        { c: "聞", r: "耳", w: ["門", "日", "口", "耳"] },
-        { c: "笑", r: "竹", w: ["夭", "大", "口", "竹"] }
+        { c: "閉", r: "門", w: ["才", "木", "十", "門"] }
       ],
       quantifiers: [
         { n: "花朵", a: "朵", w: ["頭", "張", "隻", "本"] },
@@ -498,30 +533,21 @@
         { n: "貓咪", a: "隻", w: ["張", "條", "雙", "頭"] },
         { n: "大象", a: "頭", w: ["隻", "座", "張", "尾"] },
         { n: "水牛", a: "頭", w: ["隻", "條", "把", "個"] },
-        { n: "獅子", a: "隻", w: ["朵", "本", "雙", "頭"] },
         { n: "汽車", a: "輛", w: ["本", "片", "把", "頂"] },
-        { n: "腳踏車", a: "輛", w: ["張", "艘", "台", "條"] },
         { n: "輪船", a: "艘", w: ["輛", "座", "頂", "隻"] },
-        { n: "飛機", a: "架", w: ["艘", "輛", "隻", "本"] },
         { n: "白紙", a: "張", w: ["把", "輛", "條", "座"] },
-        { n: "照片", a: "張", w: ["本", "枝", "個", "塊"] },
         { n: "高山", a: "座", w: ["條", "面", "片", "輛"] },
         { n: "高樓", a: "座", w: ["面", "朵", "頭", "艘"] },
         { n: "橋樑", a: "座", w: ["條", "輛", "艘", "張"] },
         { n: "雨傘", a: "把", w: ["隻", "條", "個", "支"] },
-        { n: "剪刀", a: "把", w: ["隻", "張", "枝", "個"] },
         { n: "鉛筆", a: "枝", w: ["張", "本", "隻", "朵"] },
         { n: "書本", a: "本", w: ["張", "件", "杯", "架"] },
         { n: "外套", a: "件", w: ["個", "張", "朵", "條"] },
         { n: "鞋子", a: "雙", w: ["隻", "個", "條", "本"] },
-        { n: "筷子", a: "雙", w: ["隻", "枝", "把", "張"] },
         { n: "大樹", a: "棵", w: ["顆", "隻", "把", "座"] },
         { n: "西瓜", a: "顆", w: ["棵", "粒", "把", "朵"] },
-        { n: "珍珠", a: "顆", w: ["棵", "條", "頂", "輛"] },
         { n: "小魚", a: "條", w: ["朵", "本", "張", "隻"] },
-        { n: "彩虹", a: "道", w: ["條", "面", "座", "束"] },
-        { n: "帽子", a: "頂", w: ["隻", "件", "個", "把"] },
-        { n: "大門", a: "扇", w: ["頂", "座", "本", "雙"] }
+        { n: "彩虹", a: "道", w: ["條", "面", "座", "束"] }
       ],
       opposites: [
         { w: "白", a: "黑" }, { w: "大", a: "小" }, { w: "高", a: "矮" },
@@ -530,12 +556,8 @@
         { w: "內", a: "外" }, { w: "開", a: "關" }, { w: "出", a: "入" },
         { w: "冷", a: "熱" }, { w: "深", a: "淺" }, { w: "粗", a: "細" },
         { w: "重", a: "輕" }, { w: "明", a: "暗" }, { w: "厚", a: "薄" },
-        { w: "甜", a: "苦" }, { w: "軟", a: "硬" }, { w: "強", a: "弱" },
-        { w: "新", a: "舊" }, { w: "遠", a: "近" }, { w: "正", a: "反" },
-        { w: "乾", a: "濕" }, { w: "飽", a: "餓" }, { w: "真", a: "假" }
+        { w: "甜", a: "苦" }, { w: "軟", a: "硬" }
       ],
-
-      // 2. 生活常識矩陣庫
       lifeTemplates: [
         { q: "過馬路時看見什麼號誌應該停下來等待？", a: "小紅人(紅燈)", o: ["小紅人(紅燈)", "小綠人(綠燈)", "黃燈閃爍", "白線"] },
         { q: "吃東西或用餐前，最衛生的好習慣是什麼？", a: "用肥皂洗手", o: ["用肥皂洗手", "在褲子上擦乾淨", "直接拿來吃", "喝一大口水"] },
@@ -543,20 +565,13 @@
         { q: "搭乘機車時，依法必須佩戴什麼保護頭部？", a: "合格安全帽", o: ["合格安全帽", "太陽眼鏡", "毛線帽", "耳機"] },
         { q: "喝完的鋁箔包或牛奶紙盒，應該分類到哪一類？", a: "紙容器回收", o: ["紙容器回收", "一般垃圾", "廚餘桶", "塑膠類"] },
         { q: "吃完便當剩下的菜渣和果皮，屬於哪一類？", a: "廚餘", o: ["廚餘", "一般垃圾", "塑膠回收", "紙類回收"] },
-        { q: "遇到火災濃煙時，避難逃生的正確原則是什麼？", a: "壓低身體沿牆逃生", o: ["壓低身體沿牆逃生", "快搭電梯逃跑", "站立大叫奔跑", "打開窗戶跳樓"] },
         { q: "地震發生時，最重要的避難三步驟順序是什麼？", a: "趴下、掩護、穩住", o: ["趴下、掩護、穩住", "收行李、逃跑", "開窗跳下", "搭電梯逃離"] },
         { q: "在臺灣遇到緊急火警或需要救護車時，要撥打哪一支電話？", a: "119", o: ["119", "110", "113", "165"] },
         { q: "在臺灣遇到緊急犯罪或壞人需要報警時，要撥打哪一支電話？", a: "110", o: ["110", "119", "165", "104"] },
         { q: "接到可疑陌生人要你匯款或提供帳號的詐騙電話時，撥打？", a: "165 反詐專線", o: ["165 反詐專線", "119", "113", "104"] },
         { q: "端午節闔家團圓常見的傳統節慶活動是什麼？", a: "吃粽子、划龍舟", o: ["吃粽子、划龍舟", "賞月吃月餅", "戴面具要糖果", "貼春聯放鞭炮"] },
-        { q: "中秋節夜晚全家人團聚時常見的傳統美食是什麼？", a: "月餅和柚子", o: ["月餅和柚子", "粽子", "湯圓", "潤餅"] },
-        { q: "日常生活中如何減少碳足跡、落實節能減碳？", a: "多搭乘大眾運輸工具", o: ["多搭乘大眾運輸工具", "天天開大休旅車", "冷氣開到最強", "多用免洗碗筷"] },
-        { q: "夏天吹冷氣時，配合什麼設備可以更快達到涼爽並省電？", a: "循環扇或電風扇", o: ["循環扇或電風扇", "暖爐", "大開門窗", "烤箱"] },
-        { q: "使用完各項電器設備後，長時間不用應如何處理？", a: "拔掉插頭或關閉電源", o: ["拔掉插頭或關閉電源", "永遠開著", "澆水冷卻", "用紙包起來"] },
-        { q: "食品外包裝上的「有效日期」代表什麼意義？", a: "確保在此日期前食用最安全", o: ["確保在此日期前食用最安全", "製造出廠的日期", "過期也可以無限存放", "隨便參考的"] }
+        { q: "中秋節夜晚全家人團聚時常見的傳統美食是什麼？", a: "月餅和柚子", o: ["月餅和柚子", "粽子", "湯圓", "潤餅"] }
       ],
-
-      // 3. 自然科普矩陣庫
       natureTemplates: [
         { q: "小青蛙小時候在水中生活的幼體叫什麼？", a: "蝌蚪", o: ["蝌蚪", "毛毛蟲", "小毛球", "小金魚"] },
         { q: "美麗的蝴蝶小時候通常是什麼模樣？", a: "毛毛蟲", o: ["毛毛蟲", "蝌蚪", "蜜蜂", "蒼蠅"] },
@@ -564,21 +579,12 @@
         { q: "蜘蛛通常有幾隻腳？（注意：蜘蛛不是昆蟲喔！）", a: "8 隻腳", o: ["8 隻腳", "6 隻腳", "4 隻腳", "10 隻腳"] },
         { q: "植物的哪一個部位主要埋在土壤中負責吸收水分和礦物質？", a: "樹根(根部)", o: ["樹根(根部)", "葉片", "花朵", "果實"] },
         { q: "植物利用葉綠素吸收太陽光製造養分的作用叫什麼？", a: "光合作用", o: ["光合作用", "呼吸作用", "消化作用", "蒸發作用"] },
-        { q: "水在常壓下加熱到攝氏 100 度沸騰時，會變成氣態的什麼？", a: "水蒸氣", o: ["水蒸氣", "冰塊", "乾冰", "岩漿"] },
         { q: "水在受冷降溫到攝氏零度以下時，會凝固變成固態的什麼？", a: "冰塊", o: ["冰塊", "水蒸氣", "溫水", "泥土"] },
         { q: "磁鐵兩端磁力最強的部位被稱為什麼？", a: "磁極(N極與S極)", o: ["磁極(N極與S極)", "磁場中心", "重心點", "重力軸"] },
-        { q: "兩塊磁鐵相互靠近時，具有什麼樣的物理特性？", a: "同極相斥，異極相吸", o: ["同極相斥，異極相吸", "永遠互相排斥", "永遠互相吸引", "沒有任何反應"] },
-        { q: "地球自己旋轉一圈（自轉）的時間大約是多久？", a: "一天(約24小時)", o: ["一天(約24小時)", "一個月", "一年", "一小時"] },
-        { q: "地球繞著太陽公轉一周的時間大約是多久？", a: "一年(約365天)", o: ["一年(約365天)", "一天", "一個月", "十年"] },
         { q: "每天清晨太陽是從哪一個方位升起？", a: "東方", o: ["東方", "西方", "南方", "北方"] },
-        { q: "空氣中含量最多、佔了大氣約 78% 的氣體是什麼？", a: "氮氣", o: ["氮氣", "氧氣", "二氧化碳", "氦氣"] },
-        { q: "動物中直接生下小寶寶並餵食母乳的動物被稱為什麼？", a: "胎生動物(哺乳類)", o: ["胎生動物(哺乳類)", "卵生動物", "變態發育動物", "兩棲類"] },
-        { q: "下列哪一種動物屬於會生蛋孵化的「卵生動物」？", a: "麻雀", o: ["麻雀", "小牛", "小狗", "大貓熊"] },
         { q: "雨過天晴時，陽光經過空氣中懸浮小水滴折射會形成什麼現象？", a: "七色彩虹", o: ["七色彩虹", "極光", "沙塵暴", "打雷"] },
         { q: "人體主要的呼吸器官、負責氣體交換的是哪一個器官？", a: "肺臟", o: ["肺臟", "心臟", "胃", "肝臟"] }
       ],
-
-      // 4. 生活英文海量單字庫 (100+ 實用生活高頻字)
       englishWords: [
         { en: "Cat", zh: "🐱 貓咪" }, { en: "Dog", zh: "🐶 狗狗" }, { en: "Apple", zh: "🍎 蘋果" },
         { en: "Banana", zh: "🍌 香蕉" }, { en: "Egg", zh: "🥚 雞蛋" }, { en: "Duck", zh: "🦆 鴨子" },
@@ -591,18 +597,10 @@
         { en: "School", zh: "學校" }, { en: "Teacher", zh: "老師" }, { en: "Student", zh: "學生" },
         { en: "Friend", zh: "朋友" }, { en: "Family", zh: "家庭" }, { en: "Red", zh: "紅色" },
         { en: "Blue", zh: "藍色" }, { en: "Yellow", zh: "黃色" }, { en: "Green", zh: "綠色" },
-        { en: "Orange", zh: "橘色/柳橙" }, { en: "Rabbit", zh: "兔子" }, { en: "Lion", zh: "獅子" },
-        { en: "Bear", zh: "小熊" }, { en: "Pig", zh: "小豬" }, { en: "Summer", zh: "夏天" },
-        { en: "Winter", zh: "冬天" }, { en: "Rainy", zh: "下雨的" }, { en: "Sunny", zh: "晴朗的" },
-        { en: "Doctor", zh: "醫生" }, { en: "Nurse", zh: "護士" }, { en: "Police", zh: "警察" },
-        { en: "Bread", zh: "麵包" }, { en: "Rice", zh: "米飯" }, { en: "Cake", zh: "蛋糕" },
-        { en: "Music", zh: "音樂" }, { en: "Dream", zh: "夢想" }, { en: "Brave", zh: "勇敢的" },
-        { en: "Happy", zh: "快樂的" }, { en: "Smile", zh: "微笑" }, { en: "Jump", zh: "跳躍" },
-        { en: "Run", zh: "跑步" }, { en: "Play", zh: "玩耍" }, { en: "Sleep", zh: "睡覺" },
-        { en: "Park", zh: "公園" }, { en: "River", zh: "河流" }, { en: "Moon", zh: "月亮" }
+        { en: "Orange", zh: "橘色/柳橙" }, { en: "Rabbit", zh: "兔子" }, { en: "Summer", zh: "夏天" },
+        { en: "Winter", zh: "冬天" }, { en: "Doctor", zh: "醫生" }, { en: "Police", zh: "警察" },
+        { en: "Music", zh: "音樂" }, { en: "Happy", zh: "快樂的" }
       ],
-
-      // 5. 幼兒純圖型認字庫
       babyPics: [
         { q: "「 ㄆ 」是什麼？", ans: "🍎", options: ["🍎", "🐶", "🚗", "🐟"] },
         { q: "「 ㄍ 」是什麼？", ans: "🐶", options: ["🐶", "🍎", "🐱", "⭐"] },
@@ -611,9 +609,7 @@
         { q: "「 ㄩˊ 」是什麼？", ans: "🐟", options: ["🐟", "🍎", "🚗", "🍉"] },
         { q: "「 ㄒ 」是什麼？", ans: "🍉", options: ["🍉", "🐶", "🍎", "🐱"] },
         { q: "「 ㄅ 」是什麼？", ans: "🍌", options: ["🍌", "🐱", "🐶", "🚗"] },
-        { q: "「 ㄧㄤˊ 」是什麼？", ans: "🐑", options: ["🐑", "🐶", "🐟", "🍎"] },
-        { q: "「 ㄋㄧㄠˇ 」是什麼？", ans: "🐦", options: ["🐦", "🐱", "🚗", "🍌"] },
-        { q: "「 ㄊㄨˋ 」是什麼？", ans: "🐰", options: ["🐰", "🐶", "🍎", "🍉"] }
+        { q: "「 ㄧㄤˊ 」是什麼？", ans: "🐑", options: ["🐑", "🐶", "🐟", "🍎"] }
       ]
     };
 
@@ -824,28 +820,145 @@
       } catch (e) {}
     }
 
+    // ========================================================
+    // 🎼 古典音樂引擎：自動播放 ＋ 音量增益節點控制 (GainNode)
+    // ========================================================
+    const CLASSICAL_MELODIES = [
+      // 1. 莫札特《小星星》
+      [
+        { m: 60, d: 0.4 }, { m: 60, d: 0.4 }, { m: 67, d: 0.4 }, { m: 67, d: 0.4 },
+        { m: 69, d: 0.4 }, { m: 69, d: 0.4 }, { m: 67, d: 0.8 },
+        { m: 65, d: 0.4 }, { m: 65, d: 0.4 }, { m: 64, d: 0.4 }, { m: 64, d: 0.4 },
+        { m: 62, d: 0.4 }, { m: 62, d: 0.4 }, { m: 60, d: 0.8 }
+      ],
+      // 2. 貝多芬《歡樂頌》
+      [
+        { m: 64, d: 0.4 }, { m: 64, d: 0.4 }, { m: 65, d: 0.4 }, { m: 67, d: 0.4 },
+        { m: 67, d: 0.4 }, { m: 65, d: 0.4 }, { m: 64, d: 0.4 }, { m: 62, d: 0.4 },
+        { m: 60, d: 0.4 }, { m: 60, d: 0.4 }, { m: 62, d: 0.4 }, { m: 64, d: 0.4 },
+        { m: 64, d: 0.6 }, { m: 62, d: 0.2 }, { m: 62, d: 0.8 }
+      ],
+      // 3. 貝多芬《給愛麗絲》
+      [
+        { m: 76, d: 0.3 }, { m: 75, d: 0.3 }, { m: 76, d: 0.3 }, { m: 75, d: 0.3 },
+        { m: 76, d: 0.3 }, { m: 71, d: 0.3 }, { m: 74, d: 0.3 }, { m: 72, d: 0.3 },
+        { m: 69, d: 0.8 }, { m: 60, d: 0.3 }, { m: 64, d: 0.3 }, { m: 69, d: 0.3 },
+        { m: 71, d: 0.8 }
+      ]
+    ];
+
     let audioCtx = null;
+    let bgmGainNode = null;
     let isBgmPlaying = false;
+    let bgmTimer = null;
+    let currentMelodyIdx = 0;
+    let currentNoteIdx = 0;
+    let hasInteracted = false;
+    let currentVolume = 0.35; // 預設 35% 柔和音量
+
     function getAudioContext() {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        bgmGainNode = audioCtx.createGain();
+        bgmGainNode.gain.value = currentVolume;
+        bgmGainNode.connect(audioCtx.destination);
+      }
       return audioCtx;
     }
+
     function ensureAudioResumed() {
       try {
         const ctx = getAudioContext();
         if (ctx.state === 'suspended') ctx.resume();
       } catch(e) {}
     }
+
+    // 第一次點選螢幕任何地方自動喚醒並播放音樂
+    function userFirstInteract() {
+      ensureAudioResumed();
+      if (!hasInteracted) {
+        hasInteracted = true;
+        if (!isBgmPlaying) {
+          startBGM();
+        }
+      }
+    }
+
+    // 音量滑桿調整函式
+    function changeVolume(val) {
+      currentVolume = val / 100;
+      if (bgmGainNode && audioCtx) {
+        bgmGainNode.gain.setValueAtTime(currentVolume, audioCtx.currentTime);
+      }
+    }
+
+    function playClassicalNote(midi, dur) {
+      if (!isBgmPlaying) return;
+      const ctx = getAudioContext();
+      if (ctx.state === 'suspended') ctx.resume();
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(440 * Math.pow(2, (midi - 69) / 12), ctx.currentTime);
+
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+
+      osc.connect(gain);
+      gain.connect(bgmGainNode); // 串接音量控制節點
+      osc.start();
+      osc.stop(ctx.currentTime + dur + 0.05);
+    }
+
+    function playNextClassicalStep() {
+      if (!isBgmPlaying) return;
+      const piece = CLASSICAL_MELODIES[currentMelodyIdx];
+      const note = piece[currentNoteIdx];
+
+      playClassicalNote(note.m, note.d);
+
+      currentNoteIdx++;
+      if (currentNoteIdx >= piece.length) {
+        currentNoteIdx = 0;
+        currentMelodyIdx = (currentMelodyIdx + 1) % CLASSICAL_MELODIES.length;
+        bgmTimer = setTimeout(playNextClassicalStep, (note.d + 1.0) * 1000);
+      } else {
+        bgmTimer = setTimeout(playNextClassicalStep, note.d * 1000);
+      }
+    }
+
+    function startBGM() {
+      ensureAudioResumed();
+      isBgmPlaying = true;
+      currentMelodyIdx = 0;
+      currentNoteIdx = 0;
+      if (bgmTimer) clearTimeout(bgmTimer);
+      playNextClassicalStep();
+      const btn = document.getElementById('bgm-btn');
+      btn.innerText = '🎵 音樂: 播放中';
+      btn.className = 'action-btn playing';
+    }
+
+    function stopBGM() {
+      isBgmPlaying = false;
+      if (bgmTimer) clearTimeout(bgmTimer);
+      const btn = document.getElementById('bgm-btn');
+      btn.innerText = '🎵 音樂: 關閉';
+      btn.className = 'action-btn';
+    }
+
     function toggleBGM() {
       ensureAudioResumed();
-      const btn = document.getElementById('bgm-btn');
-      isBgmPlaying = !isBgmPlaying;
-      btn.innerText = isBgmPlaying ? '🎵 音樂: 播放中' : '🎵 龍貓音樂: 關閉';
-      btn.className = isBgmPlaying ? 'action-btn playing' : 'action-btn';
+      hasInteracted = true;
+      if (isBgmPlaying) stopBGM();
+      else startBGM();
     }
 
     // ==========================================
-    // ⚙️ 千題程式化生成出題中樞 (單次保證零重複)
+    // ⚙️ 題目出題調度中樞
     // ==========================================
     function nextQuestion() {
       isProcessing = false;
@@ -861,7 +974,6 @@
       else if (currentSubject === 'english') generateEnglishProcedural();
     }
 
-    // 1. 數學千題生成 (隨機算式)
     function generateMathProcedural() {
       document.getElementById('audio-btn').style.display = 'none';
       let a, b, isAdd, ans, hash;
@@ -900,7 +1012,6 @@
       renderButtons(options, val => val === ans, false);
     }
 
-    // 2. 乘法千題生成
     function generateMultiplyProcedural() {
       document.getElementById('audio-btn').style.display = 'none';
       let a, b, ans, hash;
@@ -930,7 +1041,6 @@
       renderButtons(options, val => val === ans, false);
     }
 
-    // 3. 國語千題生成（部首、量詞、相反詞矩陣組合）
     function generateChineseProcedural() {
       if (currentLevel === 'baby') {
         const item = MATRIX_DATA.babyPics[Math.floor(Math.random() * MATRIX_DATA.babyPics.length)];
@@ -949,21 +1059,18 @@
       let qText, correctAns, wrongChoices, hash;
 
       if (roll < 0.4) {
-        // 部首題（寫 ➔ 宀 已徹底校正）
         const item = MATRIX_DATA.radicals[Math.floor(Math.random() * MATRIX_DATA.radicals.length)];
         qText = `「${item.c}」的部首是什麼？`;
         correctAns = item.r;
-        wrongChoices = item.w;
+        wrongChoices = item.w.slice(0, 3);
         hash = 'cn_rad_' + item.c;
       } else if (roll < 0.75) {
-        // 量詞題
         const item = MATRIX_DATA.quantifiers[Math.floor(Math.random() * MATRIX_DATA.quantifiers.length)];
         qText = `一（ ）${item.n}`;
         correctAns = item.a;
-        wrongChoices = item.w;
+        wrongChoices = item.w.slice(0, 3);
         hash = 'cn_quant_' + item.n;
       } else {
-        // 相反詞題 (動態生成隨機干擾項)
         const target = MATRIX_DATA.opposites[Math.floor(Math.random() * MATRIX_DATA.opposites.length)];
         qText = `「${target.w}」的相反詞是？`;
         correctAns = target.a;
@@ -983,7 +1090,6 @@
       renderButtons(options, val => val === correctAns, false);
     }
 
-    // 4. 生活常識千題生成 (情境矩陣)
     function generateLifeProcedural() {
       const template = MATRIX_DATA.lifeTemplates[Math.floor(Math.random() * MATRIX_DATA.lifeTemplates.length)];
       recordQuestion('life_' + template.q);
@@ -996,7 +1102,6 @@
       renderButtons(options, val => val === template.a, false);
     }
 
-    // 5. 自然科普千題生成
     function generateNatureProcedural() {
       const template = MATRIX_DATA.natureTemplates[Math.floor(Math.random() * MATRIX_DATA.natureTemplates.length)];
       recordQuestion('nature_' + template.q);
@@ -1009,7 +1114,6 @@
       renderButtons(options, val => val === template.a, false);
     }
 
-    // 6. 生活英文千題組合 (萬種排列、真人美語發音)
     function generateEnglishProcedural() {
       document.getElementById('audio-btn').style.display = 'inline-block';
       const target = MATRIX_DATA.englishWords[Math.floor(Math.random() * MATRIX_DATA.englishWords.length)];
@@ -1032,7 +1136,7 @@
         btn.className = `option-btn ${isPicMode ? 'pic-mode' : ''}`;
         btn.innerText = val;
         btn.onclick = () => {
-          ensureAudioResumed();
+          userFirstInteract();
           handleChoice(btn, checkFn(val));
         };
         box.appendChild(btn);
